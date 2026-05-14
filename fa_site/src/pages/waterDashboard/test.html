@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>台灣水庫蓄水情形</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=Oswald:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --blue-deep: #0a2a4a;
+            --blue-mid: #0d5c8a;
+            --blue-bright: #1a9dcc;
+            --blue-light: #5dcfef;
+            --cyan: #00e5ff;
+            --teal: #0abcce;
+            --accent: #f0b429;
+            --accent-light: #ffe08a;
+            --white: #ffffff;
+            --text-light: #cce8f5;
+            --bg: #071e34;
+            --card-bg: rgba(13, 92, 138, 0.35);
+            --card-border: rgba(0, 229, 255, 0.25);
+            --glass: rgba(255, 255, 255, 0.06);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(26, 157, 204, 0.18) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(10, 188, 206, 0.12) 0%, transparent 55%),
+                linear-gradient(160deg, #071e34 0%, #0a2a4a 50%, #071e34 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* grid lines */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        /* ── Header ── */
+        header {
+            position: relative;
+            padding: 36px 0 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-badge {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            opacity: 0.8;
+        }
+
+        header h1 {
+            font-family: 'Oswald', 'Noto Sans TC', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 700;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, var(--blue-light), var(--cyan), var(--white));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+        }
+
+        .timestamp {
+            margin-top: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 229, 255, 0.08);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            border-radius: 30px;
+            padding: 5px 18px;
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .timestamp::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--cyan);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(0.8);
+            }
+        }
+
+        /* ── Summary Bar ── */
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            margin: 32px 0;
+        }
+
+        .summary-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+
+        .summary-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 229, 255, 0.12);
+        }
+
+        .summary-item .label {
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .summary-item .value {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.9rem;
+            font-weight: 700;
+            color: var(--cyan);
+            line-height: 1;
+        }
+
+        .summary-item .unit {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 3px;
+        }
+
+        /* ── Section Title ── */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 42px 0 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--cyan);
+            text-transform: uppercase;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(0, 229, 255, 0.4), transparent);
+        }
+
+        /* ── Reservoir Grid ── */
+        .reservoir-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 18px;
+        }
+
+        /* ── Reservoir Card ── */
+        .reservoir-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 22px 24px 18px;
+            backdrop-filter: blur(14px);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.28s cubic-bezier(.22, .68, 0, 1.2), box-shadow 0.28s;
+            animation: fadeUp 0.5s both;
+        }
+
+        .reservoir-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--blue-bright), var(--cyan));
+            border-radius: 18px 18px 0 0;
+        }
+
+        .reservoir-card.full::before {
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+        }
+
+        .reservoir-card:hover {
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 14px 40px rgba(0, 229, 255, 0.15), 0 0 0 1px rgba(0, 229, 255, 0.2);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(22px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .reservoir-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--white);
+        }
+
+        .status-chip {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .status-full {
+            background: rgba(240, 180, 41, 0.2);
+            color: var(--accent);
+            border: 1px solid rgba(240, 180, 41, 0.4);
+        }
+
+        .status-high {
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--cyan);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+        }
+
+        .status-normal {
+            background: rgba(26, 157, 204, 0.15);
+            color: var(--blue-light);
+            border: 1px solid rgba(26, 157, 204, 0.3);
+        }
+
+        /* Progress Bar */
+        .progress-wrap {
+            position: relative;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, var(--blue-mid), var(--cyan));
+            position: relative;
+            transition: width 1.2s cubic-bezier(.22, .68, 0, 1);
+        }
+
+        .progress-bar.full-bar {
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 99px;
+            filter: blur(4px);
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .storage-amount {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--white);
+            line-height: 1;
+        }
+
+        .storage-unit {
+            font-size: 10px;
+            color: var(--text-light);
+            margin-top: 3px;
+        }
+
+        .pct-badge {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .pct-badge.full-pct {
+            color: var(--accent);
+        }
+
+        /* Wave decoration */
+        .wave-bg {
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            opacity: 0.06;
+            pointer-events: none;
+        }
+
+        /* ── Legend ── */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 36px;
+            padding: 18px 22px;
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-full {
+            background: var(--accent);
+        }
+
+        .dot-high {
+            background: var(--cyan);
+        }
+
+        .dot-normal {
+            background: var(--blue-light);
+        }
+
+        /* ── Note ── */
+        .note {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.35);
+            line-height: 1.8;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .reservoir-grid {
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 14px;
+            }
+
+            .summary-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .reservoir-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            .summary-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .reservoir-card {
+                padding: 16px 16px 14px;
+            }
+
+            .storage-amount {
+                font-size: 1.4rem;
+            }
+
+            .pct-badge {
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .reservoir-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Stagger animation delay */
+        .reservoir-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .reservoir-card:nth-child(2) {
+            animation-delay: 0.10s;
+        }
+
+        .reservoir-card:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .reservoir-card:nth-child(4) {
+            animation-delay: 0.20s;
+        }
+
+        .reservoir-card:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .reservoir-card:nth-child(6) {
+            animation-delay: 0.30s;
+        }
+
+        .reservoir-card:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .reservoir-card:nth-child(8) {
+            animation-delay: 0.40s;
+        }
+
+        .reservoir-card:nth-child(9) {
+            animation-delay: 0.45s;
+        }
+
+        .reservoir-card:nth-child(10) {
+            animation-delay: 0.50s;
+        }
+
+        .reservoir-card:nth-child(11) {
+            animation-delay: 0.55s;
+        }
+
+        .reservoir-card:nth-child(12) {
+            animation-delay: 0.60s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <header>
+            <div class="header-badge">Taiwan Water Resources Agency</div>
+            <h1>水庫蓄水情形</h1>
+            <div class="timestamp">即時資料　113-11-20　17:00</div>
+        </header>
+
+        <!-- Summary Bar -->
+        <div class="summary-bar">
+            <div class="summary-item">
+                <div class="label">監測水庫數</div>
+                <div class="value">12</div>
+                <div class="unit">座</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">總蓄水量</div>
+                <div class="value">163,625</div>
+                <div class="unit">萬立方公尺</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">滿庫水庫</div>
+                <div class="value">2</div>
+                <div class="unit">座（100%）</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">平均蓄水率</div>
+                <div class="value">99.2<span style="font-size:1.1rem">%</span></div>
+                <div class="unit">整體充盈</div>
+            </div>
+        </div>
+
+        <!-- Grid -->
+        <div class="section-title">各水庫即時蓄水狀況</div>
+
+        <div class="reservoir-grid" id="reservoirGrid"></div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item"><span class="legend-dot dot-full"></span> 滿庫（100%）</div>
+            <div class="legend-item"><span class="legend-dot dot-high"></span> 高蓄水（≥ 95%）</div>
+            <div class="legend-item"><span class="legend-dot dot-normal"></span> 正常蓄水（＜ 95%）</div>
+        </div>
+
+        <!-- Note -->
+        <p class="note">
+            ※ 蓄水量單位：萬立方公尺<br>
+            ※ 本表未經人工完整檢驗，僅供參考
+        </p>
+
+    </div>
+
+    <script>
+        const reservoirs = [
+            { name: '石門水庫', storage: 20500, pct: 99.88 },
+            { name: '翡翠水庫', storage: 33815, pct: 91.40 },
+            { name: '寶山水庫', storage: 506, pct: 100.00 },
+            { name: '寶山第二水庫', storage: 3382, pct: 99.93 },
+            { name: '永和山水庫', storage: 2987, pct: 99.77 },
+            { name: '鯉魚潭水庫', storage: 11456, pct: 99.18 },
+            { name: '德基水庫', storage: 18628, pct: 99.10 },
+            { name: '曾文水庫', storage: 50966, pct: 100.00 },
+            { name: '南化水庫', storage: 8905, pct: 99.83 },
+            { name: '烏山頭水庫', storage: 7612, pct: 97.01 },
+            { name: '蘭潭水庫', storage: 914, pct: 99.13 },
+            { name: '仁義潭水庫', storage: 2454, pct: 99.53 },
+        ];
+
+        function getStatus(pct) {
+            if (pct >= 100) return { label: '滿庫', cls: 'status-full', barCls: 'full-bar', pctCls: 'full-pct' };
+            if (pct >= 95) return { label: '高蓄水', cls: 'status-high', barCls: '', pctCls: '' };
+            return { label: '正常', cls: 'status-normal', barCls: '', pctCls: '' };
+        }
+
+        const grid = document.getElementById('reservoirGrid');
+
+        reservoirs.forEach(r => {
+            const s = getStatus(r.pct);
+            const isFull = r.pct >= 100;
+            const card = document.createElement('div');
+            card.className = `reservoir-card${isFull ? ' full' : ''}`;
+            card.innerHTML = `
+      <div class="card-header">
+        <div class="reservoir-name">${r.name}</div>
+        <div class="status-chip ${s.cls}">${s.label}</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar ${s.barCls}" style="width:0%" data-pct="${Math.min(r.pct, 100)}"></div>
+      </div>
+      <div class="stats-row">
+        <div>
+          <div class="storage-amount">${r.storage.toLocaleString()}</div>
+          <div class="storage-unit">萬立方公尺</div>
+        </div>
+        <div class="pct-badge ${s.pctCls}">${r.pct.toFixed(2)}%</div>
+      </div>
+      <svg class="wave-bg" viewBox="0 0 300 50" preserveAspectRatio="none">
+        <path d="M0,25 C50,5 100,45 150,25 S250,5 300,25 L300,50 L0,50Z" fill="var(--cyan)"/>
+      </svg>
+    `;
+            grid.appendChild(card);
+        });
+
+        // Animate bars after paint
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                document.querySelectorAll('.progress-bar').forEach(bar => {
+                    bar.style.width = bar.dataset.pct + '%';
+                });
+            }, 200);
+        });
+    </script>
+</body>
+
+</html>
