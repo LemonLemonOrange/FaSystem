@@ -2,23 +2,30 @@ import React, { useState } from 'react';
 import './WaterDashboard.css';
 import ReservoirDashboard from './ReservoirDashboard';
 import WaterWarningDashboard from './WaterWarningDashboard';
+import ReservoirFactoryMappingForm from './components/ReservoirFactoryMappingForm';
 
 const WaterReservoirDashboard = () => {
-  const [activeTab, setActiveTab] = useState('reservoir');
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div style={{ padding: '20px' }}>
-      <div className="dashboard-container">
+    <div className="water-dashboard-page" style={{ padding: '20px' }}>
+      <div className={`dashboard-container ${activeTab === 'overview' ? 'overview-mode' : ''}`}>
 
         {/* Header Tabs */}
         <div className="dashboard-header-tabs">
-          <div 
+          <div
+            className={`header-tab ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            總覽
+          </div>
+          <div
             className={`header-tab ${activeTab === 'reservoir' ? 'active' : ''}`}
             onClick={() => setActiveTab('reservoir')}
           >
-            水庫蓄水情形圖
+            水庫蓄水圖
           </div>
-          <div 
+          <div
             className={`header-tab ${activeTab === 'warning' ? 'active' : ''}`}
             onClick={() => setActiveTab('warning')}
           >
@@ -28,8 +35,14 @@ const WaterReservoirDashboard = () => {
 
         {activeTab === 'reservoir' && <ReservoirDashboard />}
         {activeTab === 'warning' && <WaterWarningDashboard />}
-        
+
+        {activeTab === 'overview' && (
+          <div className="overview-scroll-area">
+            <ReservoirFactoryMappingForm />
+          </div>
+        )}
       </div>
+
     </div>
   );
 };

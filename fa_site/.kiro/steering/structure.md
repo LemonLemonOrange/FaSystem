@@ -27,8 +27,8 @@ src/
 │       ├── components/
 │       │   ├── ReservoirCard.js   # 水庫卡片元件
 │       │   └── TaiwanMap.js       # 台灣地圖元件
-│       ├── ReservoirDashboard.js  # 水庫蓄水情形圖
-│       ├── WaterDashboard.js      # Tab 容器（水庫蓄水情形圖 / 水情燈號）
+│       ├── ReservoirDashboard.js  # 水庫蓄水圖
+│       ├── WaterDashboard.js      # Tab 容器（水庫蓄水圖 / 水情燈號）
 │       └── WaterWarningDashboard.js # 水情燈號頁面
 │
 ├── components/            # 共用元件（部分為預留骨架）

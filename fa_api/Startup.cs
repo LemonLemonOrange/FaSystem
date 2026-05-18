@@ -1,11 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using fa_api.Schedule;
+using fa_api.Services.Mail;
 using fa_api.Services.Ncdr;
 using fa_api.Services.WraGov;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -49,6 +53,19 @@ namespace fa_api
 
             // 註冊記憶體快取
             services.AddMemoryCache();
+
+            // ========== Mail 服務 ==========
+            services.Configure<SmtpSettings>(Configuration.GetSection("SmtpSettings"));
+            services.AddScoped<IMailService, MailService>();
+            services.AddScoped<MailSchedule>();
+
+            // ========== Hangfire（使用 In-Memory Storage，Production 請換 SQL/Redis）==========
+            services.AddHangfire(config => config
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UseMemoryStorage());
+            services.AddHangfireServer();
 
             // ========== NCDR 服務（枯旱預警）==========
             services.AddScoped<INcdrDroughtService, NcdrDroughtService>();
@@ -109,9 +126,20 @@ namespace fa_api
             }
             else
             {
-                app.UseExceptionHandler("/error"); // 改為 API 錯誤端點
+                app.UseExceptionHandler("/error");
                 app.UseHsts();
             }
+
+            // ========== 根路徑重定向到 Swagger ==========
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Path == "/")
+                {
+                    context.Response.Redirect("/swagger");
+                    return;
+                }
+                await next();
+            });
 
             // ========== 啟用 Swagger 中介軟體 ==========
             app.UseSwagger();
@@ -125,6 +153,9 @@ namespace fa_api
                 c.EnableDeepLinking();
                 c.EnableFilter();
             });
+
+            // ========== Hangfire Dashboard（/hangfire）==========
+            app.UseHangfireDashboard("/hangfire");
 
             // 開發環境不使用 HTTPS 重定向
             if (!env.IsDevelopment())
@@ -143,6 +174,7 @@ namespace fa_api
             {
                 // 只需要 API 路由，不需要 MVC 預設路由
                 endpoints.MapControllers();
+                endpoints.MapHangfireDashboard();
             });
         }
     }

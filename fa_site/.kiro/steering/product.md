@@ -4,7 +4,7 @@
 
 ## 核心模組
 
-- **水資源管理 (Water Resource Management)** — 水庫蓄水情形與水情燈號儀表板。資料透過本地 .NET 後端代理 WRA（水利署）與 NCDR（國家災害防救科技中心）的開放 API 取得。
+- **水資源管理 (Water Resource Management)** — 水庫蓄水與水情燈號儀表板。資料透過本地 .NET 後端代理 WRA（水利署）與 NCDR（國家災害防救科技中心）的開放 API 取得。
 - **系統管理 (System Administration)** — 帳號與權限管理。
 - **水費管理 (Water Fees)** — 水費資料的新增、查詢、修改、刪除（CRUD）。
 

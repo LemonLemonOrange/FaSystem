@@ -2,5 +2,5 @@
 // 全局統一導出 API 及 React Query Hooks
 // ==========================================
 
-export * from '../libs/waterFees';
+export * from 'libs/waterFees';
 

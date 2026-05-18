@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import './WaterDashboard.css';
 import ReservoirCard from './components/ReservoirCard';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
-import { useReservoirStation, useReservoirRealTimeInfo } from '../../libs/WraGov/reservoir';
+import { useReservoirStation, useReservoirRealTimeInfo } from 'libs/WraGov/reservoir';
 import { Spin, Button, Popconfirm, message } from 'antd';
 
 const GEO_URL = 'https://cdn.jsdelivr.net/npm/taiwan-atlas/counties-10t.json';
@@ -24,18 +24,18 @@ const reservoirMapData = [
 ];
 // 卡片預設位移（未調整時的初始位置）
 const DEFAULT_CARD_OFFSETS = {
-  '寶山水庫': { dx: -214, dy: 168 },
-  '寶山第二水庫': { dx: -464, dy: -89 },
-  '翡翠水庫': { dx: 284, dy: 16 },
-  '曾文水庫': { dx: -72, dy: 232 },
-  '南化水庫': { dx: -287, dy: -239 },
-  '蘭潭水庫': { dx: 379, dy: 252 },
-  '烏山頭水庫': { dx: -266, dy: 205 },
-  '德基水庫': { dx: 369, dy: 54 },
-  '永和山水庫': { dx: -251, dy: 296 },
-  '鯉魚潭水庫': { dx: 298, dy: 121 },
-  '石門水庫': { dx: 37, dy: -410 },
-  '仁義潭水庫': { dx: 506, dy: 62 },
+  '寶山水庫': { dx: -525, dy: -152 },
+  '寶山第二水庫': { dx: -575, dy: 10 },
+  '翡翠水庫': { dx: 256, dy: 53 },
+  '曾文水庫': { dx: -145, dy: 242 },
+  '南化水庫': { dx: -359, dy: -37 },
+  '蘭潭水庫': { dx: 412, dy: 199 },
+  '烏山頭水庫': { dx: -321, dy: 121 },
+  '德基水庫': { dx: 416, dy: 54 },
+  '永和山水庫': { dx: -559, dy: 154 },
+  '鯉魚潭水庫': { dx: 484, dy: 248 },
+  '石門水庫': { dx: 319, dy: -128 },
+  '仁義潭水庫': { dx: 224, dy: 258 },
 };
 
 // 標記點預設位移（未調整時的初始位置）
@@ -51,14 +51,13 @@ const DEFAULT_MARKER_OFFSETS = {
   '翡翠水庫': { dx: -112, dy: 68 },
 };
 
-
 // 精確複製 react-simple-maps 的 geoMercator 投影
-// projectionConfig: { center: [121, 23.8], scale: 8000 }, width=600, height=700
-// 最後從 SVG 座標空間 (600×700) 縮放到容器像素
-const SVG_W = 600;
-const SVG_H = 700;
-const PROJ_CENTER_LNG = 121;
-const PROJ_CENTER_LAT = 23.8;
+// 實際台灣地圖 SVG 尺寸: 850×1200
+// projectionConfig: { center: [121, 23.8], scale: 8000 }, width=850, height=1200
+const SVG_W = 850;
+const SVG_H = 1200;
+const PROJ_CENTER_LNG = 120.8;
+const PROJ_CENTER_LAT = 24;
 const PROJ_SCALE = 8000;
 
 function latlngToPixel(lng, lat, containerW, containerH) {
@@ -105,6 +104,8 @@ const ReservoirDashboard = () => {
 
   const { data: stations, isLoading: isStationsLoading } = useReservoirStation();
   const { data: realTimeInfos, isLoading: isRealTimeLoading } = useReservoirRealTimeInfo();
+  // console.log('stations', stations);
+  // console.log('realTimeInfos', realTimeInfos);
 
   // 監聽容器尺寸變化
   useEffect(() => {
@@ -219,11 +220,11 @@ const ReservoirDashboard = () => {
   const reservoirs = useMemo(() => {
     if (!stations || !realTimeInfos) return reservoirMapData.map(d => ({ ...d, volume: '-', percent: 0 }));
     return reservoirMapData.map(mapData => {
-      const station = stations.find(s => s.StationName === mapData.name);
+      const station = stations.find(s => s.stationName === mapData.name);
       if (!station) return { ...mapData, volume: '-', percent: 0 };
-      const realTime = realTimeInfos.find(r => r.StationNo === station.StationNo);
-      const volume = realTime?.EffectiveStorage != null ? Math.round(realTime.EffectiveStorage).toLocaleString() : '-';
-      const percent = realTime?.PercentageOfStorage != null ? Number(realTime.PercentageOfStorage.toFixed(2)) : 0;
+      const realTime = realTimeInfos.find(r => r.stationNo === station.stationNo);
+      const volume = realTime?.effectiveStorage != null ? Math.round(realTime.effectiveStorage).toLocaleString() : '-';
+      const percent = realTime?.percentageOfStorage != null ? Number(realTime.percentageOfStorage.toFixed(2)) : 0;
       return { ...mapData, volume, percent };
     });
   }, [stations, realTimeInfos]);
@@ -246,7 +247,15 @@ const ReservoirDashboard = () => {
 
   const updateTime = useMemo(() => {
     if (!realTimeInfos || realTimeInfos.length === 0) return '';
-    const date = new Date(realTimeInfos[0].Time);
+    const timeStr = realTimeInfos[0].time;
+    let date = new Date(timeStr);
+    if (isNaN(date.getTime())) {
+      const parts = timeStr.split(' ');
+      const dateParts = parts[0].split('/');
+      if (dateParts.length === 3) {
+        date = new Date(`${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}T${parts[1]}`);
+      }
+    }
     if (isNaN(date.getTime())) return '';
     const twYear = date.getFullYear() - 1911;
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -275,7 +284,7 @@ const ReservoirDashboard = () => {
           </Button>
         </div>
         <div style={{ textAlign: 'center', marginBottom: 20, color: '#0abcce', fontSize: '1.2rem', fontWeight: 'bold' }}>
-          水庫蓄水情形 {updateTime ? `(${updateTime})` : ''}
+          水庫蓄水 {updateTime ? `(${updateTime})` : ''}
         </div>
         <div className="reservoir-grid">
           {reservoirs.map(res => (
@@ -297,7 +306,7 @@ const ReservoirDashboard = () => {
   return (
     <div ref={containerRef} style={{ position: 'absolute', inset: 0 }}>
       <div className="dashboard-title">
-        水庫蓄水情形 {updateTime ? `(${updateTime})` : ''}
+        水庫蓄水 {updateTime ? `(${updateTime})` : ''}
       </div>
 
       {/* 工具列 */}
@@ -324,8 +333,8 @@ const ReservoirDashboard = () => {
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ center: [121, 23.8], scale: 8000 }}
-        width={600}
-        height={700}
+        width={850}
+        height={1200}
         style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
       >
         <Geographies geography={GEO_URL} parseNodeName="counties">

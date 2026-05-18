@@ -25,7 +25,7 @@
 ## 常用指令
 
 ```bash
-# 啟動開發伺服器（localhost:3000）
+# 啟動開發伺服器（localhost:3300）
 npm start
 
 # 執行測試（watch 模式）

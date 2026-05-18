@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import TaiwanMap from './components/TaiwanMap';
 import './WaterWarningDashboard.css';
-import { useDroughtAlert } from '../../libs/Ncdr';
+import { useDroughtAlert } from 'libs/Ncdr';
 
 /** severity → { colorClass, status } 對應表 */
 const SEVERITY_MAP = {
