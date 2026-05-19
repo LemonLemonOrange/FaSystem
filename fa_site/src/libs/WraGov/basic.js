@@ -1,7 +1,6 @@
-import { useQuery } from 'react-query';
-import axios from 'axios';
+﻿import { useQuery } from 'react-query';
+import { apiClient } from '../api/request';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:65326';
 
 /**
  * @typedef {Object} City
@@ -21,21 +20,14 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:653
  * @param {object} [params]
  * @returns {Promise<Array<City>>} 包含所有縣市的資料陣列
  */
-export const fetchCity = async (params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/basic/city`, { params });
-  return response.data;
-};
+export const fetchCity = (params) => apiClient.get(`/api/watergov/basic/city`, { params });
 
 /**
- * 取得指定縣市的鄉鎮清單
- * @param {string} city - 縣市名稱（例如：臺北市）
+ * ?��??��?�???��??��??? * @param {string} city - �???�稱（�?如�??��?市�?
  * @param {object} [params]
- * @returns {Promise<Array<Town>>} 包含該縣市所有鄉鎮的資料陣列
+ * @returns {Promise<Array<Town>>} ?�含該縣市�??��??��?資�????
  */
-export const fetchTown = async (city, params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/basic/${city}/town`, { params });
-  return response.data;
-};
+export const fetchTown = (city, params) => apiClient.get(`/api/watergov/basic/${city}/town`, { params });
 
 export const useCity = (params, options) => useQuery({ queryKey: ['wraCity', params], queryFn: () => fetchCity(params), ...options });
 export const useTown = (city, params, options) => useQuery({ queryKey: ['wraTown', city, params], queryFn: () => fetchTown(city, params), enabled: !!city, ...options });

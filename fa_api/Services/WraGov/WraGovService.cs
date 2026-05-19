@@ -92,6 +92,12 @@ namespace fa_api.Services.WraGov
             return await FetchDataAsync<ReservoirDataDto>(url, "水庫即時水情");
         }
 
+        /// <summary>
+        /// GetReservoirDataAsync — alias for GetReservoirStatisticsAsync（供 WaterGovController Legacy 區塊使用）
+        /// </summary>
+        public Task<List<ReservoirDataDto>> GetReservoirDataAsync()
+            => GetReservoirStatisticsAsync();
+
         public async Task<ReservoirDataDto> GetReservoirByNameAsync(string reservoirName)
         {
             if (string.IsNullOrWhiteSpace(reservoirName))

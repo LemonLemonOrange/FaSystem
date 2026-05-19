@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import TaiwanMap from './components/TaiwanMap';
 import './WaterWarningDashboard.css';
-import { useDroughtAlert } from 'libs/Ncdr';
+import { useDroughtAlert } from 'libs/hooks/api/wrSituation/Ncdr';
 
 /** severity → { colorClass, status } 對應表 */
 const SEVERITY_MAP = {
@@ -31,7 +31,7 @@ const WaterWarningDashboard = () => {
     const { severity, area } = alert.info;
     const severityInfo = SEVERITY_MAP[severity] || SEVERITY_MAP.Minor;
 
-    // 每個受影響縣市都套用相同的 severity 燈號
+    // 每個受影響區域都有相同的 severity 狀態
     return (area || []).map(a => ({
       region: a.areaDesc, // 例如「新竹縣」、「台中市」
       ...severityInfo,
@@ -53,7 +53,7 @@ const WaterWarningDashboard = () => {
         <TaiwanMap warnings={warnings} />
       </div>
 
-      {/* 右側資訊區 */}
+      {/* 右側資訊欄 */}
       <div className="warning-info-section">
         <div className="legend-panel">
           <div className="legend-item">
@@ -75,13 +75,13 @@ const WaterWarningDashboard = () => {
         </div>
 
         <div className="date-panel">
-          <div className="date-label">現行水情燈號發布日期</div>
+          <div className="date-label">最新水情燈號公告日期</div>
           <div className="date-value">{publishDate}</div>
         </div>
 
         <div className="status-list-panel">
           {warnings.length === 0 ? (
-            <div style={{ color: '#555', textAlign: 'center', padding: '20px 0' }}>目前無水情燈號警戒</div>
+            <div style={{ color: '#555', textAlign: 'center', padding: '20px 0' }}>目前無水情警戒</div>
           ) : (
             warnings.map((w, idx) => (
               <div key={idx} className="status-item">
@@ -101,10 +101,10 @@ const WaterWarningDashboard = () => {
               rel="noreferrer"
               className="download-btn"
             >
-              枯旱預警圖檔下載
+              旱災警報檔下載
             </a>
           ) : (
-            <button className="download-btn" disabled>枯旱預警圖檔下載</button>
+            <button className="download-btn" disabled>旱災警報檔下載</button>
           )}
         </div>
       </div>

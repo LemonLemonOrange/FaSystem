@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using fa_api.Dtos.Ncdr;  // ← 更新
+using fa_api.Dtos.Ncdr;
 using fa_api.Services.Ncdr;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;

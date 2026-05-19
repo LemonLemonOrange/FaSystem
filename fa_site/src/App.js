@@ -41,20 +41,16 @@ const AppContent = () => {
             style={{ height: '100%', borderRight: 0 }}
             items={[
               {
-                key: 'group_resource',
+                key: "group_resource",
                 icon: <SettingOutlined />,
-                label: '水資源管理',
-                children: [
-                  { key: '/water-resource/dashboard', label: '水庫管理' },
-                ],
+                label: "水資源管理",
+                children: [{ key: "/water-resource/dashboard", label: "水庫管理" }],
               },
               {
-                key: 'group_system',
+                key: "group_system",
                 icon: <SettingOutlined />,
-                label: '系統管理',
-                children: [
-                  { key: '/admin/users', label: '帳號權限' },
-                ],
+                label: "系統管理",
+                children: [{ key: "/admin/users", label: "帳號權限" }],
               },
             ]}
           />

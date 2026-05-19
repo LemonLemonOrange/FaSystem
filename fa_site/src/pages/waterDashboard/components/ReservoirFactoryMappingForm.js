@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Button, Card, Form, Input, Select, Space, Table, Tag, Typography, message } from 'antd';
 import { useDroughtAlert } from 'libs/Ncdr';
-import { useReservoirRealTimeInfo, useReservoirStation } from 'libs/WraGov/reservoir';
+import { useReservoirRealTimeInfo, useReservoirStation } from 'libs/hooks/api/wrSituation/WraGov/reservoir';
 
 const DEFAULT_RESERVOIR_OPTIONS = [
     '寶山水庫',
@@ -165,21 +165,6 @@ const ReservoirFactoryMappingForm = () => {
 
         return map;
     }, [stations, realTimeInfos]);
-
-    const waterWarningSummary = useMemo(() => {
-        const severity = droughtAlert?.info?.severity;
-        const areaCount = (droughtAlert?.info?.area || []).length;
-        const severityMap = {
-            Minor: '水情提醒',
-            Moderate: '減壓供水',
-            Severe: '減量供水',
-            Extreme: '分區供水或定點供水',
-        };
-        return {
-            text: severityMap[severity] || '目前無水情燈號警戒',
-            areaCount,
-        };
-    }, [droughtAlert]);
 
     const regionWarningMap = useMemo(() => {
         const severity = droughtAlert?.info?.severity;

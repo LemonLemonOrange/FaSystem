@@ -6,14 +6,14 @@ namespace fa_api.Services.WraGov
 {
     public interface IWraGovService
     {
-        #region °ò¥»¸ê®Æ
+        #region ï¿½ò¥»¸ï¿½ï¿½
 
         Task<List<CityDto>> GetCityAsync();
         Task<List<TownDto>> GetTownByCityAsync(string cityCode);
 
         #endregion
 
-        #region ¤ô®w¸ê®Æ
+        #region ï¿½ï¿½ï¿½wï¿½ï¿½ï¿½
 
         Task<List<ReservoirStationDto>> GetReservoirStationAsync();
         Task<List<ReservoirRealTimeInfoDto>> GetReservoirRealTimeInfoAsync();
@@ -23,7 +23,7 @@ namespace fa_api.Services.WraGov
 
         #endregion
 
-        #region «B¶q¸ê®Æ
+        #region ï¿½Bï¿½qï¿½ï¿½ï¿½
 
         Task<List<RainStationDto>> GetRainStationAsync();
         Task<List<RainRealTimeInfoDto>> GetRainRealTimeInfoAsync();
@@ -32,13 +32,13 @@ namespace fa_api.Services.WraGov
 
         #endregion
 
-        #region ¨Æ¥ó¸ê®Æ
+        #region ï¿½Æ¥ï¿½ï¿½ï¿½
 
         Task<List<EventDto>> GetEventByYearAsync(int year);
 
         #endregion
 
-        #region ²Î­p¸ê®Æ
+        #region ï¿½Î­pï¿½ï¿½ï¿½
 
         Task<List<DisasterFloodingStatisticsDto>> GetStatisticsFloodingAsync(string eventNo);
         Task<List<DisasterWaterFacilityStatisticsDto>> GetStatisticsWaterFacilityAsync(string eventNo);
@@ -46,32 +46,33 @@ namespace fa_api.Services.WraGov
 
         #endregion
 
-        #region ¨¾¦Ä¸ê§÷¡]·s¼W¡^
+        #region ï¿½ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½]ï¿½sï¿½Wï¿½^
 
         /// <summary>
-        /// ¨ú±o¨¾¦Ä¸ê§÷¦ì¸m¸ê®Æ
+        /// ï¿½ï¿½ï¿½oï¿½ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½mï¿½ï¿½ï¿½
         /// API: https://fhy.wra.gov.tw/WraApi/v1/FloodDefense/MaterialLocation
         /// </summary>
         Task<List<FloodDefenseMaterialLocationDto>> GetFloodDefenseMaterialLocationAsync();
 
         #endregion
 
-        #region ¤ô®w¬ÛÃö¡]ÂÂ API¡A«O¯d¡^
+        #region æ°´åº«èˆŠç‰ˆ APIï¼ˆLegacyï¼Œä¿ç•™ï¼‰
 
         Task<List<ReservoirDataDto>> GetReservoirStatisticsAsync();
+        Task<List<ReservoirDataDto>> GetReservoirDataAsync();  // alias for GetReservoirStatisticsAsync
         Task<ReservoirDataDto> GetReservoirByNameAsync(string reservoirName);
         Task<List<ReservoirOperationDto>> GetReservoirOperationAsync();
         Task<List<OverflowAlarmDto>> GetOverflowAlarmAsync();
 
         #endregion
 
-        #region ¨Ñ¤ô¬ÛÃö
+        #region ï¿½Ñ¤ï¿½ï¿½ï¿½ï¿½ï¿½
 
         Task<List<WaterSupplyConditionDto>> GetWaterSupplyConditionAsync();
 
         #endregion
 
-        #region ¤ô¦ì¯¸¬ÛÃö
+        #region ï¿½ï¿½ï¿½ì¯¸ï¿½ï¿½ï¿½ï¿½
 
         Task<List<WaterStationDto>> GetWaterStationAsync();
         Task<List<WaterRealTimeInfoDto>> GetWaterRealTimeInfoAsync();
@@ -79,7 +80,7 @@ namespace fa_api.Services.WraGov
 
         #endregion
 
-        #region ¤ô¤å¬ÛÃö
+        #region ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         Task<List<WaterLevelDataDto>> GetWaterLevelRealTimeAsync(string stationNo = null);
         Task<List<RainfallDataDto>> GetRainfallRealTimeAsync(string stationNo = null);

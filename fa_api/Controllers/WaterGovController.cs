@@ -9,26 +9,34 @@ using Microsoft.Extensions.Logging;
 
 namespace fa_api.Controllers
 {
-    /// <summary>
-    /// ¤ô®w¸ê®Æ±±¨î¾¹¡]¤ô§Q¸p API¡^
-    /// </summary>
     [ApiController]
-    [Route("api/[controller]")]
-    [ApiExplorerSettings(GroupName = "WraGov - ¤ô¦ì¯¸")]
+    [Route("api/watergov")]
+    [ApiExplorerSettings(GroupName = "WraGov")]
     [Produces("application/json")]
     public class WaterGovController : ControllerBase
     {
-        #region ¨p¦³Äæ¦ì
-
         private readonly ILogger<WaterGovController> _logger;
         private readonly IWraGovService _wraGovService;
         private readonly IMemoryCache _cache;
 
-        #endregion
-
-        #region §Ö¨úÁä±`¼Æ
-
-        private const string ReservoirCacheKey = "wraReservoirData";
+        // Cache keys
+        private const string CityCacheKey = "wraCity";
+        private const string TownCacheKeyPrefix = "wraTown_";
+        private const string EventCacheKeyPrefix = "wraEvent_";
+        private const string MaterialLocationCacheKey = "wraFloodDefenseMaterialLocation";
+        private const string RainStationCacheKey = "wraRainStation";
+        private const string RainRealTimeInfoCacheKey = "wraRainRealTimeInfo";
+        private const string RainWarningCacheKey = "wraRainWarning";
+        private const string RainAffectedAreaCacheKey = "wraRainAffectedArea";
+        private const string ReservoirStationCacheKey = "wraReservoirStation";
+        private const string ReservoirRealTimeInfoCacheKey = "wraReservoirRealTimeInfo";
+        private const string ReservoirDailyCacheKey = "wraReservoirDaily";
+        private const string ReservoirWarningCacheKey = "wraReservoirWarning";
+        private const string ReservoirAffectedAreaCacheKey = "wraReservoirAffectedArea";
+        private const string StatFloodingCacheKeyPrefix = "wraStatisticsFlooding_";
+        private const string StatWaterFacilityCacheKeyPrefix = "wraStatisticsWaterFacility_";
+        private const string StatFloodDefenseMaterialCacheKey = "wraStatisticsFloodDefenseMaterial";
+        private const string ReservoirDataCacheKey = "wraReservoirData";
         private const string OperationCacheKey = "wraOperationData";
         private const string AlarmCacheKey = "wraAlarmData";
         private const string SupplyCacheKey = "wraSupplyData";
@@ -38,11 +46,9 @@ namespace fa_api.Controllers
         private const string WaterLevelCacheKey = "wraWaterLevelData";
         private const string RainfallCacheKey = "wraRainfallData";
 
-        private static readonly TimeSpan CacheExpiration = TimeSpan.FromMinutes(10);
-
-        #endregion
-
-        #region «Øºc¨ç¦¡
+        private static readonly TimeSpan ShortCache = TimeSpan.FromMinutes(10);
+        private static readonly TimeSpan MediumCache = TimeSpan.FromHours(1);
+        private static readonly TimeSpan LongCache = TimeSpan.FromHours(24);
 
         public WaterGovController(
             ILogger<WaterGovController> logger,
@@ -54,299 +60,531 @@ namespace fa_api.Controllers
             _cache = cache;
         }
 
+        #region Basic
+
+        [HttpGet("basic/city")]
+        public async Task<ActionResult<List<CityDto>>> GetCity()
+        {
+            try
+            {
+                if (_cache.TryGetValue(CityCacheKey, out List<CityDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetCityAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡ç¸£å¸‚è³‡æ–™" });
+                _cache.Set(CityCacheKey, data, LongCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—ç¸£å¸‚è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—ç¸£å¸‚è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("basic/{cityCode}/town")]
+        public async Task<ActionResult<List<TownDto>>> GetTownByCity(string cityCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(cityCode))
+                    return BadRequest(new { message = "ç¸£å¸‚ä»£ç¢¼ä¸å¯ç©ºç™½" });
+                var cacheKey = $"{TownCacheKeyPrefix}{cityCode}";
+                if (_cache.TryGetValue(cacheKey, out List<TownDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetTownByCityAsync(cityCode);
+                if (data == null || data.Count == 0) return NotFound(new { message = $"ç¸£å¸‚ä»£ç¢¼ {cityCode} ç„¡é„‰é®è³‡æ–™" });
+                _cache.Set(cacheKey, data, LongCache);
+                return Ok(data);
+            }
+            catch (ArgumentException argEx)
+            {
+                return BadRequest(new { message = argEx.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"å–å¾—é„‰é®è³‡æ–™ç™¼ç”ŸéŒ¯èª¤ [{cityCode}]");
+                return StatusCode(500, new { message = "å–å¾—é„‰é®è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
         #endregion
 
-        #region ¤ô®w¬ÛÃö API
+        #region Event
 
-        /// <summary>
-        /// ¨ú±o©Ò¦³¤ô®w§Y®É¤ô±¡
-        /// GET /api/watergov/statistics
-        /// </summary>
+        [HttpGet("event/{year}")]
+        public async Task<ActionResult<List<EventDto>>> GetEventByYear(int year)
+        {
+            try
+            {
+                if (year < 1900 || year > 2100)
+                    return BadRequest(new { message = "å¹´ä»½ç¯„åœéœ€åœ¨ 1900-2100 ä¹‹é–“" });
+                var cacheKey = $"{EventCacheKeyPrefix}{year}";
+                if (_cache.TryGetValue(cacheKey, out List<EventDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetEventByYearAsync(year);
+                if (data == null || data.Count == 0) return NotFound(new { message = $"{year}å¹´ç„¡äº‹ä»¶è³‡æ–™" });
+                _cache.Set(cacheKey, data, MediumCache);
+                return Ok(data);
+            }
+            catch (ArgumentException argEx)
+            {
+                return BadRequest(new { message = argEx.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"å–å¾—äº‹ä»¶è³‡æ–™ç™¼ç”ŸéŒ¯èª¤ [{year}å¹´]");
+                return StatusCode(500, new { message = "å–å¾—äº‹ä»¶è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region FloodDefense
+
+        [HttpGet("flood-defense/material-location")]
+        public async Task<ActionResult<List<FloodDefenseMaterialLocationDto>>> GetMaterialLocation()
+        {
+            try
+            {
+                if (_cache.TryGetValue(MaterialLocationCacheKey, out List<FloodDefenseMaterialLocationDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetFloodDefenseMaterialLocationAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡é˜²æ±›è³‡æä½ç½®è³‡æ–™" });
+                _cache.Set(MaterialLocationCacheKey, data, MediumCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—é˜²æ±›è³‡æä½ç½®è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—é˜²æ±›è³‡æä½ç½®è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Rain
+
+        [HttpGet("rain/station")]
+        public async Task<ActionResult<List<RainStationDto>>> GetRainStation()
+        {
+            try
+            {
+                if (_cache.TryGetValue(RainStationCacheKey, out List<RainStationDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetRainStationAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡é›¨é‡ç«™è³‡æ–™" });
+                _cache.Set(RainStationCacheKey, data, MediumCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—é›¨é‡ç«™è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—é›¨é‡ç«™è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("rain/real-time-info")]
+        public async Task<ActionResult<List<RainRealTimeInfoDto>>> GetRainRealTimeInfo()
+        {
+            try
+            {
+                if (_cache.TryGetValue(RainRealTimeInfoCacheKey, out List<RainRealTimeInfoDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetRainRealTimeInfoAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡é›¨é‡å³æ™‚è³‡è¨Š" });
+                _cache.Set(RainRealTimeInfoCacheKey, data, ShortCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—é›¨é‡å³æ™‚è³‡è¨Šç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—é›¨é‡å³æ™‚è³‡è¨Šå¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("rain/warning")]
+        public async Task<ActionResult<List<RainWarningDto>>> GetRainWarning()
+        {
+            try
+            {
+                if (_cache.TryGetValue(RainWarningCacheKey, out List<RainWarningDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetRainWarningAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡é›¨é‡è­¦æˆ’è³‡æ–™" });
+                _cache.Set(RainWarningCacheKey, data, ShortCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—é›¨é‡è­¦æˆ’è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—é›¨é‡è­¦æˆ’è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("rain/affected-area")]
+        public async Task<ActionResult<List<RainAffectedAreaDto>>> GetRainAffectedArea()
+        {
+            try
+            {
+                if (_cache.TryGetValue(RainAffectedAreaCacheKey, out List<RainAffectedAreaDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetRainAffectedAreaAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡é›¨é‡å½±éŸ¿ç¯„åœè³‡æ–™" });
+                _cache.Set(RainAffectedAreaCacheKey, data, ShortCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—é›¨é‡å½±éŸ¿ç¯„åœè³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—é›¨é‡å½±éŸ¿ç¯„åœè³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Reservoir
+
+        [HttpGet("reservoir/station")]
+        public async Task<ActionResult<List<ReservoirStationDto>>> GetReservoirStation()
+        {
+            try
+            {
+                if (_cache.TryGetValue(ReservoirStationCacheKey, out List<ReservoirStationDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetReservoirStationAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´åº«æ¸¬ç«™è³‡æ–™" });
+                _cache.Set(ReservoirStationCacheKey, data, LongCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—æ°´åº«æ¸¬ç«™è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«æ¸¬ç«™è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("reservoir/real-time-info")]
+        public async Task<ActionResult<List<ReservoirRealTimeInfoDto>>> GetReservoirRealTimeInfo()
+        {
+            try
+            {
+                if (_cache.TryGetValue(ReservoirRealTimeInfoCacheKey, out List<ReservoirRealTimeInfoDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetReservoirRealTimeInfoAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´åº«å³æ™‚è³‡è¨Š" });
+                _cache.Set(ReservoirRealTimeInfoCacheKey, data, ShortCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—æ°´åº«å³æ™‚è³‡è¨Šç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«å³æ™‚è³‡è¨Šå¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("reservoir/daily")]
+        public async Task<ActionResult<List<ReservoirDailyDto>>> GetReservoirDaily()
+        {
+            try
+            {
+                if (_cache.TryGetValue(ReservoirDailyCacheKey, out List<ReservoirDailyDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetReservoirDailyAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´åº«æ¯æ—¥è³‡æ–™" });
+                _cache.Set(ReservoirDailyCacheKey, data, MediumCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—æ°´åº«æ¯æ—¥è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«æ¯æ—¥è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("reservoir/warning")]
+        public async Task<ActionResult<List<ReservoirWarningDto>>> GetReservoirWarning()
+        {
+            try
+            {
+                if (_cache.TryGetValue(ReservoirWarningCacheKey, out List<ReservoirWarningDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetReservoirWarningAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´åº«è­¦æˆ’è³‡æ–™" });
+                _cache.Set(ReservoirWarningCacheKey, data, ShortCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—æ°´åº«è­¦æˆ’è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«è­¦æˆ’è³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("reservoir/affected-area")]
+        public async Task<ActionResult<List<ReservoirAffectedAreaDto>>> GetReservoirAffectedArea()
+        {
+            try
+            {
+                if (_cache.TryGetValue(ReservoirAffectedAreaCacheKey, out List<ReservoirAffectedAreaDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetReservoirAffectedAreaAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´åº«å½±éŸ¿ç¯„åœè³‡æ–™" });
+                _cache.Set(ReservoirAffectedAreaCacheKey, data, ShortCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—æ°´åº«å½±éŸ¿ç¯„åœè³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«å½±éŸ¿ç¯„åœè³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Statistics
+
+        [HttpGet("statistics/flooding/{eventNo}")]
+        public async Task<ActionResult<List<DisasterFloodingStatisticsDto>>> GetStatisticsFlooding(string eventNo)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(eventNo))
+                    return BadRequest(new { message = "äº‹ä»¶ç·¨è™Ÿä¸å¯ç©ºç™½" });
+                var cacheKey = $"{StatFloodingCacheKeyPrefix}{eventNo}";
+                if (_cache.TryGetValue(cacheKey, out List<DisasterFloodingStatisticsDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetStatisticsFloodingAsync(eventNo);
+                if (data == null || data.Count == 0) return NotFound(new { message = $"äº‹ä»¶ {eventNo} ç„¡æ·¹æ°´çµ±è¨ˆè³‡æ–™" });
+                _cache.Set(cacheKey, data, MediumCache);
+                return Ok(data);
+            }
+            catch (ArgumentException argEx)
+            {
+                return BadRequest(new { message = argEx.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"å–å¾—æ·¹æ°´çµ±è¨ˆè³‡æ–™ç™¼ç”ŸéŒ¯èª¤ [{eventNo}]");
+                return StatusCode(500, new { message = "å–å¾—æ·¹æ°´çµ±è¨ˆè³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("statistics/water-facility/{eventNo}")]
+        public async Task<ActionResult<List<DisasterWaterFacilityStatisticsDto>>> GetStatisticsWaterFacility(string eventNo)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(eventNo))
+                    return BadRequest(new { message = "äº‹ä»¶ç·¨è™Ÿä¸å¯ç©ºç™½" });
+                var cacheKey = $"{StatWaterFacilityCacheKeyPrefix}{eventNo}";
+                if (_cache.TryGetValue(cacheKey, out List<DisasterWaterFacilityStatisticsDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetStatisticsWaterFacilityAsync(eventNo);
+                if (data == null || data.Count == 0) return NotFound(new { message = $"äº‹ä»¶ {eventNo} ç„¡æ°´åˆ©è¨­æ–½çµ±è¨ˆè³‡æ–™" });
+                _cache.Set(cacheKey, data, MediumCache);
+                return Ok(data);
+            }
+            catch (ArgumentException argEx)
+            {
+                return BadRequest(new { message = argEx.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"å–å¾—æ°´åˆ©è¨­æ–½çµ±è¨ˆè³‡æ–™ç™¼ç”ŸéŒ¯èª¤ [{eventNo}]");
+                return StatusCode(500, new { message = "å–å¾—æ°´åˆ©è¨­æ–½çµ±è¨ˆè³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        [HttpGet("statistics/flood-defense-material")]
+        public async Task<ActionResult<List<FloodDefenseOperatorDto>>> GetStatisticsFloodDefenseMaterial()
+        {
+            try
+            {
+                if (_cache.TryGetValue(StatFloodDefenseMaterialCacheKey, out List<FloodDefenseOperatorDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetStatisticsFloodDefenseMaterialAsync();
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡é˜²æ±›è³‡æçµ±è¨ˆè³‡æ–™" });
+                _cache.Set(StatFloodDefenseMaterialCacheKey, data, MediumCache);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "å–å¾—é˜²æ±›è³‡æçµ±è¨ˆè³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—é˜²æ±›è³‡æçµ±è¨ˆè³‡æ–™å¤±æ•—", error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Reservoir (Legacy - Supply Situation)
+
         [HttpGet("statistics")]
         public async Task<ActionResult<List<ReservoirDataDto>>> GetReservoirStatistics()
         {
             try
             {
-                if (_cache.TryGetValue(ReservoirCacheKey, out List<ReservoirDataDto> cachedData))
-                {
-                    _logger.LogInformation("±q§Ö¨ú¨ú±o¤ô®w¸ê®Æ");
-                    return Ok(cachedData);
-                }
-
-                var data = await _wraGovService.GetReservoirStatisticsAsync();
-
-                if (data == null || data.Count == 0)
-                {
-                    return NotFound(new { message = "¥Ø«eµL¤ô®w¸ê®Æ" });
-                }
-
-                _cache.Set(ReservoirCacheKey, data, CacheExpiration);
+                if (_cache.TryGetValue(ReservoirDataCacheKey, out List<ReservoirDataDto> cached)) return Ok(cached);
+                var data = await _wraGovService.GetReservoirDataAsync();
+                _cache.Set(ReservoirDataCacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o¤ô®w¸ê®Æ®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o¤ô®w¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—æ°´åº«å³æ™‚çµ±è¨ˆè³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«å³æ™‚çµ±è¨ˆè³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// ¨ú±o«ü©w¤ô®wªº§Y®É¤ô±¡
-        /// GET /api/watergov/statistics/{name}
-        /// </summary>
         [HttpGet("statistics/{name}")]
         public async Task<ActionResult<ReservoirDataDto>> GetReservoirByName(string name)
         {
             try
             {
-                var data = await _wraGovService.GetReservoirByNameAsync(name);
-                return Ok(data);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { message = $"§ä¤£¨ì¤ô®w: {name}" });
+                if (_cache.TryGetValue(ReservoirDataCacheKey, out List<ReservoirDataDto> allCached))
+                {
+                    var matched = allCached.Find(r => r.ReservoirName == name);
+                    if (matched != null) return Ok(matched);
+                    return NotFound(new { message = $"æ‰¾ä¸åˆ°æ°´åº«: {name}" });
+                }
+                var data = await _wraGovService.GetReservoirDataAsync();
+                _cache.Set(ReservoirDataCacheKey, data, ShortCache);
+                var result = data.Find(r => r.ReservoirName == name);
+                if (result != null) return Ok(result);
+                return NotFound(new { message = $"æ‰¾ä¸åˆ°æ°´åº«: {name}" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"¨ú±o¤ô®w¸ê®Æ®Éµo¥Í¿ù»~: {name}");
-                return StatusCode(500, new { message = "¨ú±o¤ô®w¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, $"å–å¾—æ°´åº«è³‡æ–™ç™¼ç”ŸéŒ¯èª¤ [{name}]");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«è³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// ¨ú±o¤ô®w¨C¤éÀç¹Bª¬ªp
-        /// GET /api/watergov/operation
-        /// </summary>
         [HttpGet("operation")]
         public async Task<ActionResult<List<ReservoirOperationDto>>> GetReservoirOperation()
         {
             try
             {
-                if (_cache.TryGetValue(OperationCacheKey, out List<ReservoirOperationDto> cachedData))
-                {
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(OperationCacheKey, out List<ReservoirOperationDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetReservoirOperationAsync();
-                _cache.Set(OperationCacheKey, data, CacheExpiration);
+                _cache.Set(OperationCacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±oÀç¹B¸ê®Æ®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±oÀç¹B¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—æ°´åº«æ“ä½œè³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´åº«æ“ä½œè³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// ¨ú±o¤ô®w©ñ¤ôÄµ§Ù
-        /// GET /api/watergov/overflow-alarm
-        /// </summary>
         [HttpGet("overflow-alarm")]
         public async Task<ActionResult<List<OverflowAlarmDto>>> GetOverflowAlarm()
         {
             try
             {
-                if (_cache.TryGetValue(AlarmCacheKey, out List<OverflowAlarmDto> cachedData))
-                {
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(AlarmCacheKey, out List<OverflowAlarmDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetOverflowAlarmAsync();
-                _cache.Set(AlarmCacheKey, data, CacheExpiration);
+                _cache.Set(AlarmCacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o©ñ¤ôÄµ§Ù¸ê®Æ®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o©ñ¤ôÄµ§Ù¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—æº¢æµè­¦å ±è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æº¢æµè­¦å ±è³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
-        #endregion
-
-        #region ¨Ñ¤ô¬ÛÃö API
-
-        /// <summary>
-        /// ¨ú±o¦U¦a°Ï¨Ñ¤ôª¬ªp
-        /// GET /api/watergov/supply-condition
-        /// </summary>
         [HttpGet("supply-condition")]
         public async Task<ActionResult<List<WaterSupplyConditionDto>>> GetWaterSupplyCondition()
         {
             try
             {
-                if (_cache.TryGetValue(SupplyCacheKey, out List<WaterSupplyConditionDto> cachedData))
-                {
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(SupplyCacheKey, out List<WaterSupplyConditionDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetWaterSupplyConditionAsync();
-                _cache.Set(SupplyCacheKey, data, CacheExpiration);
+                _cache.Set(SupplyCacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o¨Ñ¤ôª¬ªp®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o¨Ñ¤ôª¬ªp¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—ä¾›æ°´æƒ…å‹¢è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—ä¾›æ°´æƒ…å‹¢è³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
         #endregion
 
-        #region ¤ô¦ì¯¸¬ÛÃö API
+        #region Water
 
-        /// <summary>
-        /// ¨ú±o¤ô¦ì¯¸°ò¥»¸ê®Æ
-        /// GET /api/watergov/water/station
-        /// </summary>
         [HttpGet("water/station")]
         public async Task<ActionResult<List<WaterStationDto>>> GetWaterStation()
         {
             try
             {
-                if (_cache.TryGetValue(WaterStationCacheKey, out List<WaterStationDto> cachedData))
-                {
-                    _logger.LogInformation("±q§Ö¨ú¨ú±o¤ô¦ì¯¸¸ê®Æ");
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(WaterStationCacheKey, out List<WaterStationDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetWaterStationAsync();
-
-                if (data == null || data.Count == 0)
-                {
-                    return NotFound(new { message = "¥Ø«eµL¤ô¦ì¯¸¸ê®Æ" });
-                }
-
-                _cache.Set(WaterStationCacheKey, data, CacheExpiration);
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´ä½ç«™è³‡æ–™" });
+                _cache.Set(WaterStationCacheKey, data, MediumCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o¤ô¦ì¯¸¸ê®Æ®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o¤ô¦ì¯¸¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—æ°´ä½ç«™è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´ä½ç«™è³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// ¨ú±o¤ô¦ì§Y®É¸ê°T
-        /// GET /api/watergov/water/real-time-info
-        /// </summary>
         [HttpGet("water/real-time-info")]
         public async Task<ActionResult<List<WaterRealTimeInfoDto>>> GetWaterRealTimeInfo()
         {
             try
             {
-                if (_cache.TryGetValue(WaterRealTimeInfoCacheKey, out List<WaterRealTimeInfoDto> cachedData))
-                {
-                    _logger.LogInformation("±q§Ö¨ú¨ú±o¤ô¦ì§Y®É¸ê°T");
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(WaterRealTimeInfoCacheKey, out List<WaterRealTimeInfoDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetWaterRealTimeInfoAsync();
-
-                if (data == null || data.Count == 0)
-                {
-                    return NotFound(new { message = "¥Ø«eµL¤ô¦ì§Y®É¸ê°T" });
-                }
-
-                _cache.Set(WaterRealTimeInfoCacheKey, data, CacheExpiration);
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´ä½å³æ™‚è³‡è¨Š" });
+                _cache.Set(WaterRealTimeInfoCacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o¤ô¦ì§Y®É¸ê°T®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o¤ô¦ì§Y®É¸ê°T¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—æ°´ä½å³æ™‚è³‡è¨Šç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´ä½å³æ™‚è³‡è¨Šå¤±æ•—", error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// ¨ú±o¤ô¦ìÄµ¥Ü¸ê®Æ
-        /// GET /api/watergov/water/warning
-        /// </summary>
         [HttpGet("water/warning")]
         public async Task<ActionResult<List<WaterWarningDto>>> GetWaterWarning()
         {
             try
             {
-                if (_cache.TryGetValue(WaterWarningCacheKey, out List<WaterWarningDto> cachedData))
-                {
-                    _logger.LogInformation("±q§Ö¨ú¨ú±o¤ô¦ìÄµ¥Ü¸ê®Æ");
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(WaterWarningCacheKey, out List<WaterWarningDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetWaterWarningAsync();
-
-                if (data == null || data.Count == 0)
-                {
-                    return NotFound(new { message = "¥Ø«eµL¤ô¦ìÄµ¥Ü¸ê®Æ" });
-                }
-
-                _cache.Set(WaterWarningCacheKey, data, CacheExpiration);
+                if (data == null || data.Count == 0) return NotFound(new { message = "ç›®å‰ç„¡æ°´ä½è­¦æˆ’è³‡æ–™" });
+                _cache.Set(WaterWarningCacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o¤ô¦ìÄµ¥Ü¸ê®Æ®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o¤ô¦ìÄµ¥Ü¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—æ°´ä½è­¦æˆ’è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´ä½è­¦æˆ’è³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
-        #endregion
-
-        #region ¤ô¤å¬ÛÃö API
-
-        /// <summary>
-        /// ¨ú±o§Y®É¤ô¦ì¸ê®Æ
-        /// GET /api/watergov/water-level?stationNo={½s¸¹}
-        /// </summary>
         [HttpGet("water-level")]
         public async Task<ActionResult<List<WaterLevelDataDto>>> GetWaterLevel([FromQuery] string stationNo = null)
         {
             try
             {
                 var cacheKey = $"{WaterLevelCacheKey}_{stationNo ?? "all"}";
-
-                if (_cache.TryGetValue(cacheKey, out List<WaterLevelDataDto> cachedData))
-                {
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(cacheKey, out List<WaterLevelDataDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetWaterLevelRealTimeAsync(stationNo);
-                _cache.Set(cacheKey, data, CacheExpiration);
+                _cache.Set(cacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o¤ô¦ì¸ê®Æ®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o¤ô¦ì¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—æ°´ä½è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—æ°´ä½è³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// ¨ú±o§Y®É«B¶q¸ê®Æ
-        /// GET /api/watergov/rainfall?stationNo={½s¸¹}
-        /// </summary>
         [HttpGet("rainfall")]
         public async Task<ActionResult<List<RainfallDataDto>>> GetRainfall([FromQuery] string stationNo = null)
         {
             try
             {
                 var cacheKey = $"{RainfallCacheKey}_{stationNo ?? "all"}";
-
-                if (_cache.TryGetValue(cacheKey, out List<RainfallDataDto> cachedData))
-                {
-                    return Ok(cachedData);
-                }
-
+                if (_cache.TryGetValue(cacheKey, out List<RainfallDataDto> cached)) return Ok(cached);
                 var data = await _wraGovService.GetRainfallRealTimeAsync(stationNo);
-                _cache.Set(cacheKey, data, CacheExpiration);
+                _cache.Set(cacheKey, data, ShortCache);
                 return Ok(data);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "¨ú±o«B¶q¸ê®Æ®Éµo¥Í¿ù»~");
-                return StatusCode(500, new { message = "¨ú±o«B¶q¸ê®Æ¥¢±Ñ", error = ex.Message });
+                _logger.LogError(ex, "å–å¾—é™é›¨é‡è³‡æ–™ç™¼ç”ŸéŒ¯èª¤");
+                return StatusCode(500, new { message = "å–å¾—é™é›¨é‡è³‡æ–™å¤±æ•—", error = ex.Message });
             }
         }
 

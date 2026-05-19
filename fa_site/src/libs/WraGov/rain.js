@@ -1,23 +1,23 @@
-import { useQuery } from 'react-query';
+﻿import { useQuery } from 'react-query';
 import { wraApi } from './wraApi';
 
 /** @typedef {import('./wraApi').QueryParams} QueryParams */
 
 /**
  * @typedef {Object} RainStation
- * @property {string} Address - 測站所在地
+ * @property {string} Address - 測站地址
  * @property {string} CityCode - 縣市代碼
  * @property {number} Latitude - 緯度(WGS84)
  * @property {number} Longitude - 經度(WGS84)
- * @property {string} StationNo - 測站代碼
+ * @property {string} StationNo - 測站編號
  * @property {string} StationName - 測站名稱
- * @property {string} BasinNo - 流域代碼
+ * @property {string} BasinNo - 流域編號
  * @property {string} BasinName - 流域名稱
  */
 
 /**
  * @typedef {Object} RainRealTimeInfo
- * @property {string} StationNo - 測站代碼
+ * @property {string} StationNo - 測站編號
  * @property {string} Time - 資料時間（格式：yyyy-MM-dd HH:mm）
  * @property {number} M10 - 10 分鐘累積雨量(mm)
  * @property {number} H1 - 1 小時累積雨量(mm)
@@ -29,7 +29,7 @@ import { wraApi } from './wraApi';
 
 /**
  * @typedef {Object} RainWarning
- * @property {string} StationNo - 測站代碼
+ * @property {string} StationNo - 測站編號
  * @property {string} CityCode - 縣市代碼
  * @property {string} TownCode - 鄉鎮代碼
  * @property {string} Time - 資料時間（格式：yyyy-MM-dd HH:mm）
@@ -45,7 +45,7 @@ import { wraApi } from './wraApi';
 
 /**
  * @typedef {Object} RainAffectedArea
- * @property {string} StationNo - 測站代碼
+ * @property {string} StationNo - 測站編號
  * @property {string} CityCode - 縣市代碼
  * @property {string} TownCode - 鄉鎮代碼
  * @property {number} AlertLevel2_H1 - 二級警戒 1 小時累積雨量(mm)
@@ -65,9 +65,9 @@ import { wraApi } from './wraApi';
 export const fetchRainStation = (params) => wraApi.get('/v1/Rain/Station', { params }).then(res => res.data);
 
 /**
- * 取得雨量即時資訊
+ * 取得雨量即時資料
  * @param {QueryParams} [params]
- * @returns {Promise<Array<RainRealTimeInfo>>} 雨量即時資訊資料陣列
+ * @returns {Promise<Array<RainRealTimeInfo>>} 雨量即時資料陣列
  */
 export const fetchRainRealTimeInfo = (params) => wraApi.get('/v1/Rain/RealTimeInfo', { params }).then(res => res.data);
 

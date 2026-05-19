@@ -1,7 +1,6 @@
-import { useQuery } from 'react-query';
-import axios from 'axios';
+﻿import { useQuery } from 'react-query';
+import { apiClient } from '../api/request';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:65326';
 
 /**
  * @typedef {Object} MaterialLocation
@@ -19,9 +18,6 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:653
  * @param {object} [params]
  * @returns {Promise<Array<MaterialLocation>>} 防汛資材位置資料陣列
  */
-export const fetchFloodDefenseMaterialLocation = async (params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/flood-defense/material-location`, { params });
-  return response.data;
-};
+export const fetchFloodDefenseMaterialLocation = (params) => apiClient.get(`/api/watergov/flood-defense/material-location`, { params });
 
 export const useFloodDefenseMaterialLocation = (params, options) => useQuery({ queryKey: ['wraFloodDefenseMaterialLocation', params], queryFn: () => fetchFloodDefenseMaterialLocation(params), ...options });

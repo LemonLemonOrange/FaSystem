@@ -1,128 +1,99 @@
-import { useQuery } from 'react-query';
-import axios from 'axios';
+﻿import { useQuery } from 'react-query';
+import { apiClient } from '../api/request';
 
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:65326';
-
+    
 /**
  * @typedef {Object} ReservoirStation
- * @property {string} CityCode - 縣市代碼
- * @property {number} [EffectiveCapacity] - 有效容量
- * @property {number} [FullWaterHeight] - 滿水位（公尺）
- * @property {number} [DeadWaterHeight] - 呆水位（公尺）
- * @property {number} [Latitude] - 緯度(WGS84)
+ * @property {string} CityCode - �??�?��
+ * @property {number} [EffectiveCapacity] - ?��?容�?
+ * @property {number} [FullWaterHeight] - 滿水位�??�尺�? * @property {number} [DeadWaterHeight] - ?�水位�??�尺�? * @property {number} [Latitude] - 緯度(WGS84)
  * @property {number} [Longitude] - 經度(WGS84)
- * @property {number} Storage - 總蓄水量
- * @property {number} ProtectionFlood - 是否具防洪功能（0:否, 1:是）
- * @property {number} HydraulicConstruction - 水工構造類型（1:水庫, 2:攔河堰）
- * @property {number} Importance - 水庫壩堰重要性（1:主要, 0:次要）
- * @property {string} StationNo - 測站代碼
- * @property {string} StationName - 測站名稱
- * @property {string} BasinNo - 流域代碼
- * @property {string} BasinName - 流域名稱
+ * @property {number} Storage - 總�?水�?
+ * @property {number} ProtectionFlood - ?�否?�防洪�??��?0:?? 1:?��?
+ * @property {number} HydraulicConstruction - 水工構造�??��?1:水庫, 2:?�河?��?
+ * @property {number} Importance - 水庫壩堰?��??��?1:主�?, 0:次�?�? * @property {string} StationNo - 測�?�?��
+ * @property {string} StationName - 測�??�稱
+ * @property {string} BasinNo - 流�?�?��
+ * @property {string} BasinName - 流�??�稱
  */
 
 /**
  * @typedef {Object} ReservoirRealTimeInfo
- * @property {string} StationNo - 測站代碼
- * @property {string} Time - 資料時間（格式：yyyy-MM-dd HH:mm）
- * @property {number} [AccumulatedRainfall] - 當日累積雨量(mm)
- * @property {number} WaterHeight - 水位（公尺）
- * @property {number} [EffectiveCapacity] - 有效容量
- * @property {number} [EffectiveStorage] - 有效蓄水量
- * @property {number} [PercentageOfStorage] - 蓄水率
- * @property {number} [OperationalStorage] - 可用水量
- * @property {number} [Inflow] - 入流量(cms)
- * @property {number} [Outflow] - 出流量(cms)
- * @property {string} [Status] - 水庫狀態代碼 = ['0: 蓄水', '1: 洩水', '-1: 排放']
- * @property {string} [NextSpillTime] - 預計洩洪時間（格式：yyyy-MM-dd HH:mm）
- * @property {number} [Discharge] - 放流量(cms)
- * @property {number} [DischargeOfProtectionFlood] - 防洪放流量(cms)
- * @property {number} [DischargeOfEscapeSand] - 排砂放流量(cms)
- * @property {number} [DischargeOfHydroelectric] - 發電放流量(cms)
- * @property {number} [DischargeOfOthers] - 其他放流量(cms)
+ * @property {string} StationNo - 測�?�?��
+ * @property {string} Time - 資�??��?（格式�?yyyy-MM-dd HH:mm�? * @property {number} [AccumulatedRainfall] - ?�日累�??��?(mm)
+ * @property {number} WaterHeight - 水�?（公尺�?
+ * @property {number} [EffectiveCapacity] - ?��?容�?
+ * @property {number} [EffectiveStorage] - ?��??�水?? * @property {number} [PercentageOfStorage] - ?�水?? * @property {number} [OperationalStorage] - ?�用水�?
+ * @property {number} [Inflow] - ?��???cms)
+ * @property {number} [Outflow] - ?��???cms)
+ * @property {string} [Status] - 水庫?�?�代�?= ['0: ?�水', '1: 洩水', '-1: ?�放']
+ * @property {string} [NextSpillTime] - ?��?洩洪?��?（格式�?yyyy-MM-dd HH:mm�? * @property {number} [Discharge] - ?��???cms)
+ * @property {number} [DischargeOfProtectionFlood] - ?�洪?��???cms)
+ * @property {number} [DischargeOfEscapeSand] - ?��??��???cms)
+ * @property {number} [DischargeOfHydroelectric] - ?�電?��???cms)
+ * @property {number} [DischargeOfOthers] - ?��??��???cms)
  */
 
 /**
  * @typedef {Object} ReservoirDaily
- * @property {string} StationNo - 測站代碼
- * @property {string} Time - 資料時間（格式：yyyy-MM-dd HH:mm）
- * @property {number} [EffectiveCapacity] - 有效容量
- * @property {number} [DeadWaterHeight] - 呆水位（公尺）
- * @property {number} [FullWaterHeight] - 滿水位（公尺）
- * @property {number} [AccumulatedRainfall] - 當日累積雨量(mm)
- * @property {number} [InflowTotal] - 當日總進水量
- * @property {number} [OutflowTotal] - 當日總出水量
+ * @property {string} StationNo - 測�?�?��
+ * @property {string} Time - 資�??��?（格式�?yyyy-MM-dd HH:mm�? * @property {number} [EffectiveCapacity] - ?��?容�?
+ * @property {number} [DeadWaterHeight] - ?�水位�??�尺�? * @property {number} [FullWaterHeight] - 滿水位�??�尺�? * @property {number} [AccumulatedRainfall] - ?�日累�??��?(mm)
+ * @property {number} [InflowTotal] - ?�日總進水?? * @property {number} [OutflowTotal] - ?�日總出水�?
  */
 
 /**
  * @typedef {Object} ReservoirWarning
- * @property {string} StationNo - 測站代碼
- * @property {string} [CityCode] - 縣市代碼
- * @property {string} [TownCode] - 鄉鎮代碼
- * @property {string} Time - 資料時間（格式：yyyy-MM-dd HH:mm）
- * @property {number} [WaterHeight] - 水位（公尺）
- * @property {number} [DischargeOfProtectionFlood] - 防洪放流量(cms)
- * @property {string} [NextSpillTime] - 預計放流時間（格式：yyyy-MM-dd HH:mm）
- * @property {number} [Discharge] - 放流量(cms)
- * @property {string} Status - 水庫狀態代碼 = ['0: 蓄水', '1: 洩水', '-1: 排放']
+ * @property {string} StationNo - 測�?�?��
+ * @property {string} [CityCode] - �??�?��
+ * @property {string} [TownCode] - ?�鎮�?��
+ * @property {string} Time - 資�??��?（格式�?yyyy-MM-dd HH:mm�? * @property {number} [WaterHeight] - 水�?（公尺�?
+ * @property {number} [DischargeOfProtectionFlood] - ?�洪?��???cms)
+ * @property {string} [NextSpillTime] - ?��??��??��?（格式�?yyyy-MM-dd HH:mm�? * @property {number} [Discharge] - ?��???cms)
+ * @property {string} Status - 水庫?�?�代�?= ['0: ?�水', '1: 洩水', '-1: ?�放']
  */
 
 /**
  * @typedef {Object} ReservoirAffectedArea
- * @property {string} StationNo - 水庫代碼
- * @property {string} CityCode - 縣市代碼
- * @property {string} TownCode - 鄉鎮代碼
+ * @property {string} StationNo - 水庫�?��
+ * @property {string} CityCode - �??�?��
+ * @property {string} TownCode - ?�鎮�?��
  */
 
 /**
- * 取得水庫基本資料
+ * ?��?水庫?�本資�?
  * @param {object} [params]
- * @returns {Promise<Array<ReservoirStation>>} 水庫基本資料陣列
+ * @returns {Promise<Array<ReservoirStation>>} 水庫?�本資�????
  */
-export const fetchReservoirStation = async (params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/reservoir/station`, { params });
-  return response.data;
-};
+export const fetchReservoirStation = (params) => apiClient.get(`/api/watergov/reservoir/station`, { params });
 
 /**
- * 取得水庫即時資訊
+ * ?��?水庫?��?資�?
  * @param {object} [params]
- * @returns {Promise<Array<ReservoirRealTimeInfo>>} 水庫即時資訊資料陣列
+ * @returns {Promise<Array<ReservoirRealTimeInfo>>} 水庫?��?資�?資�????
  */
-export const fetchReservoirRealTimeInfo = async (params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/reservoir/real-time-info`, { params });
-  return response.data;
-};
+export const fetchReservoirRealTimeInfo = (params) => apiClient.get(`/api/watergov/reservoir/real-time-info`, { params });
 
 /**
- * 取得水庫統計資料
+ * ?��?水庫統�?資�?
  * @param {object} [params]
- * @returns {Promise<Array<ReservoirDaily>>} 水庫統計資料陣列
+ * @returns {Promise<Array<ReservoirDaily>>} 水庫統�?資�????
  */
-export const fetchReservoirDaily = async (params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/reservoir/daily`, { params });
-  return response.data;
-};
+export const fetchReservoirDaily = (params) => apiClient.get(`/api/watergov/reservoir/daily`, { params });
 
 /**
- * 取得水庫警示資料
+ * ?��?水庫警示資�?
  * @param {object} [params]
- * @returns {Promise<Array<ReservoirWarning>>} 水庫警示資料陣列
+ * @returns {Promise<Array<ReservoirWarning>>} 水庫警示資�????
  */
-export const fetchReservoirWarning = async (params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/reservoir/warning`, { params });
-  return response.data;
-};
+export const fetchReservoirWarning = (params) => apiClient.get(`/api/watergov/reservoir/warning`, { params });
 
 /**
- * 取得水庫警戒影響範圍
+ * ?��?水庫警�?影響範�?
  * @param {object} [params]
- * @returns {Promise<Array<ReservoirAffectedArea>>} 水庫警戒影響範圍資料陣列
+ * @returns {Promise<Array<ReservoirAffectedArea>>} 水庫警�?影響範�?資�????
  */
-export const fetchReservoirAffectedArea = async (params) => {
-  const response = await axios.get(`${API_BASE_URL}/api/watergov/reservoir/affected-area`, { params });
-  return response.data;
-};
+export const fetchReservoirAffectedArea = (params) => apiClient.get(`/api/watergov/reservoir/affected-area`, { params });
 
 export const useReservoirStation = (params, options) => useQuery({ queryKey: ['wraReservoirStation', params], queryFn: () => fetchReservoirStation(params), ...options });
 export const useReservoirRealTimeInfo = (params, options) => useQuery({ queryKey: ['wraReservoirRealTimeInfo', params], queryFn: () => fetchReservoirRealTimeInfo(params), ...options });
