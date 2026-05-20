@@ -1,20 +1,21 @@
-import React from 'react';
-import { Progress, Tag } from 'antd';
-import './ReservoirCard.css';
+import React from "react";
+import PropTypes from "prop-types";
+import { Progress, Tag } from "antd";
+import "./ReservoirCard.css";
 
 const getStatus = (pct) => {
-  if (pct >= 100) return { label: '滿庫', color: 'cyan' };
-  if (pct >= 95) return { label: '高蓄水', color: 'blue' };
-  if (pct >= 50) return { label: '正常', color: 'green' };
-  if (pct >= 20) return { label: '偏低', color: 'orange' };
-  return { label: '警戒', color: 'red' };
+  if (pct >= 100) return { label: "滿庫", color: "cyan" };
+  if (pct >= 95) return { label: "高蓄水", color: "blue" };
+  if (pct >= 50) return { label: "正常", color: "green" };
+  if (pct >= 20) return { label: "偏低", color: "orange" };
+  return { label: "警戒", color: "red" };
 };
 
 const getStrokeColor = (pct) => {
-  if (pct >= 95) return '#13c2c2';
-  if (pct >= 50) return '#52c41a';
-  if (pct >= 20) return '#faad14';
-  return '#ff4d4f';
+  if (pct >= 95) return "#13c2c2";
+  if (pct >= 50) return "#52c41a";
+  if (pct >= 20) return "#faad14";
+  return "#ff4d4f";
 };
 
 const ReservoirCard = ({ name, storage, pct, isHovered, onMouseEnter, onMouseLeave }) => {
@@ -23,13 +24,13 @@ const ReservoirCard = ({ name, storage, pct, isHovered, onMouseEnter, onMouseLea
 
   return (
     <div
-      className={`reservoir-card ${isFull ? 'full' : ''} ${isHovered ? 'hovered' : ''}`}
+      className={`reservoir-card ${isFull ? "full" : ""} ${isHovered ? "hovered" : ""}`}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <div className="card-header">
         <div className="reservoir-name">{name}</div>
-        <Tag color={status.color} style={{ margin: 0, fontSize: '0.7rem' }}>
+        <Tag color={status.color} style={{ margin: 0, fontSize: "0.7rem" }}>
           {status.label}
         </Tag>
       </div>
@@ -40,7 +41,7 @@ const ReservoirCard = ({ name, storage, pct, isHovered, onMouseEnter, onMouseLea
         strokeColor={getStrokeColor(pct)}
         trailColor="rgba(255,255,255,0.15)"
         showInfo={false}
-        style={{ margin: '4px 0' }}
+        style={{ margin: "4px 0" }}
       />
 
       <div className="stats-row">
@@ -59,3 +60,18 @@ const ReservoirCard = ({ name, storage, pct, isHovered, onMouseEnter, onMouseLea
 };
 
 export default ReservoirCard;
+
+ReservoirCard.propTypes = {
+  name: PropTypes.string.isRequired,
+  storage: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  pct: PropTypes.number.isRequired,
+  isHovered: PropTypes.bool,
+  onMouseEnter: PropTypes.func,
+  onMouseLeave: PropTypes.func,
+};
+
+ReservoirCard.defaultProps = {
+  isHovered: false,
+  onMouseEnter: undefined,
+  onMouseLeave: undefined,
+};

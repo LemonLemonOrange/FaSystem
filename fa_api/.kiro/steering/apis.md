@@ -10,6 +10,13 @@ Base URL（開發）：`http://localhost:5000`
 
 所有 API 回傳 `application/json`，快取時間依資料類型而異。
 
+### 管理介面
+
+| 路徑 | 說明 |
+|------|------|
+| `/swagger` | Swagger UI（根路徑 `/` 自動重定向） |
+| `/hangfire` | Hangfire 背景排程 Dashboard |
+
 ---
 
 ### 1. WaterGov — 水利署資料（`/api/watergov`）
