@@ -39,5 +39,20 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "fast-check": "^4.8.0"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^fast-check$": "<rootDir>/node_modules/fast-check/lib/cjs/fast-check.js",
+      "^pure-rand/generator/congruential32$": "<rootDir>/node_modules/pure-rand/lib/generator/congruential32.js",
+      "^pure-rand/generator/mersenne$": "<rootDir>/node_modules/pure-rand/lib/generator/mersenne.js",
+      "^pure-rand/generator/xorshift128plus$": "<rootDir>/node_modules/pure-rand/lib/generator/xorshift128plus.js",
+      "^pure-rand/generator/xoroshiro128plus$": "<rootDir>/node_modules/pure-rand/lib/generator/xoroshiro128plus.js",
+      "^pure-rand/distribution/(.*)$": "<rootDir>/node_modules/pure-rand/lib/distribution/$1.js",
+      "^pure-rand/utils/(.*)$": "<rootDir>/node_modules/pure-rand/lib/utils/$1.js",
+      "^pure-rand/types/(.*)$": "<rootDir>/node_modules/pure-rand/lib/types/$1.js"
+    }
   }
 }

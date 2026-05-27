@@ -24,7 +24,7 @@ flowchart TD
     Validation -->|無效| ErrorMsg[顯示錯誤訊息]
     Preview --> ImgReadPage
     ImgReadPage -->|點擊「開始辨識」| useDetectImage
-    useDetectImage -->|axios.post multipart/form-data| YOLO_API[POST /api/img-read/detect]
+    useDetectImage -->|axios.post multipart/form-data| YOLO_API[POST /api/yolo/detect]
     YOLO_API -->|YoloResponseDto| useDetectImage
     useDetectImage -->|data / error| ImgReadPage
     ImgReadPage -->|detections + elapsedMs| ResultSection[結果區域]
@@ -159,7 +159,7 @@ const detectImage = async (file) => {
 
   const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:65326';
   const response = await axios.post(
-    `${baseURL}/api/img-read/detect`,
+    `${baseURL}/api/yolo/detect`,
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } }
   );
@@ -183,7 +183,7 @@ const detectImage = async (file) => {
 
 ### YoloResponseDto
 
-後端 `POST /api/img-read/detect` 的回傳結構：
+後端 `POST /api/yolo/detect` 的回傳結構：
 
 ```js
 /**

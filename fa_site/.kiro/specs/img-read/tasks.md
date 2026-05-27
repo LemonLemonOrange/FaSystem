@@ -19,20 +19,20 @@ Task 9 (單元測試)   ──→ 依賴 Task 4, 5
 
 ## Tasks
 
-- [ ] 1. 建立 useDetectImage mutation hook
+- [x] 1. 建立 useDetectImage mutation hook
   - 建立目錄 `src/libs/imgRead/`
   - 建立 `src/libs/imgRead/imgRead.js`
-  - 實作 `detectImage(file)` async 函式：建立 `FormData`，以欄位名稱 `image` 附加 `File` 物件，使用 `axios.post()` 搭配 `process.env.REACT_APP_API_BASE_URL || 'http://localhost:65326'` 發送至 `/api/img-read/detect`，設定 `Content-Type: multipart/form-data` 標頭，回傳 `response.data`
+  - 實作 `detectImage(file)` async 函式：建立 `FormData`，以欄位名稱 `image` 附加 `File` 物件，使用 `axios.post()` 搭配 `process.env.REACT_APP_API_BASE_URL || 'http://localhost:65326'` 發送至 `/api/yolo/detect`，設定 `Content-Type: multipart/form-data` 標頭，回傳 `response.data`
   - 實作 `useDetectImage` hook：使用 react-query v3 的 `useMutation(detectImage)` 包裝，匯出 `{ mutate, isLoading, data, error, reset }`
   - **驗收：** hook 可正確建構 FormData 並呼叫正確的 API 端點；不透過 `apiClient` 實例
   - **對應需求：** 需求 4.1, 4.2, 4.3, 4.4, 4.5, 4.6
 
-- [ ] 2. 更新 queries.js 統一匯出
+- [x] 2. 更新 queries.js 統一匯出
   - 在 `src/api/queries.js` 新增 `export * from '../libs/imgRead/imgRead';`
   - **驗收：** 可從 `src/api/queries.js` 成功 import `useDetectImage`
   - **對應需求：** 需求 4.1
 
-- [ ] 3. 建立驗證純函式與格式化工具
+- [x] 3. 建立驗證純函式與格式化工具
   - 在 `src/pages/imgRead/components/ImgUploader.js` 中具名匯出以下純函式：
     - `isValidMimeType(mimeType)` — 僅對 `'image/jpeg'`、`'image/png'`、`'image/bmp'` 回傳 `true`
     - `isValidFileSize(sizeInBytes)` — `sizeInBytes <= 10 * 1024 * 1024` 時回傳 `true`
@@ -42,7 +42,7 @@ Task 9 (單元測試)   ──→ 依賴 Task 4, 5
   - **驗收：** 四個純函式可獨立 import 並測試，不依賴 React 或元件狀態
   - **對應需求：** 需求 1.2, 1.3, 3.1, 3.2
 
-- [ ] 4. 建立 ImgUploader 元件
+- [x] 4. 建立 ImgUploader 元件
   - 建立目錄 `src/pages/imgRead/components/`
   - 完成 `src/pages/imgRead/components/ImgUploader.js`（Task 3 已建立純函式骨架）
   - 使用 Ant Design `Upload` 元件，設定 `beforeUpload` 回傳 `false` 阻止自動上傳，支援點擊與拖曳（`Dragger` 或 `Upload` + `drag`）
@@ -56,7 +56,7 @@ Task 9 (單元測試)   ──→ 依賴 Task 4, 5
   - **驗收：** 選擇有效檔案後顯示預覽；無效格式或超大檔案顯示對應警告並清除選擇；`disabled` 為 `true` 時上傳區域不可操作
   - **對應需求：** 需求 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 需求 6.1
 
-- [ ] 5. 建立 ImgReadPage 主頁面元件
+- [x] 5. 建立 ImgReadPage 主頁面元件
   - 建立 `src/pages/imgRead/ImgReadPage.js`
   - 使用 `useState(null)` 管理 `selectedFile`
   - 呼叫 `useDetectImage()`，解構 `{ mutate, isLoading, data, error, reset }`
@@ -73,19 +73,19 @@ Task 9 (單元測試)   ──→ 依賴 Task 4, 5
   - **驗收：** 初始狀態按鈕 disabled、無結果區域；選擇有效檔案後按鈕啟用；送出期間按鈕 loading；成功後顯示結果；錯誤時顯示對應 message
   - **對應需求：** 需求 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 需求 3.1, 3.2, 3.3, 3.4, 3.5, 需求 6.2
 
-- [ ] 6. 更新 AppRoutes.js 新增路由
+- [x] 6. 更新 AppRoutes.js 新增路由
   - 在 `src/routes/AppRoutes.js` import `ImgReadPage`
   - 在 `<Routes>` 內新增 `<Route path="/img-read" element={<ImgReadPage />} />`
   - **驗收：** 瀏覽 `/img-read` 可正確渲染 `ImgReadPage`
   - **對應需求：** 需求 5.1
 
-- [ ] 7. 更新 App.js 新增側邊選單項目
+- [x] 7. 更新 App.js 新增側邊選單項目
   - 在 `src/App.js` 的 `items` 陣列新增頂層選單項目：`{ key: '/img-read', icon: <ScanOutlined />, label: '影像辨識' }`
   - 從 `@ant-design/icons` import `ScanOutlined`
   - **驗收：** 側邊選單顯示「影像辨識」項目；點擊後導覽至 `/img-read`；`selectedKeys` 正確反映當前路徑
   - **對應需求：** 需求 5.2, 5.3
 
-- [ ] 8. 撰寫屬性測試（Property-Based Testing）
+- [x] 8. 撰寫屬性測試（Property-Based Testing）
   - 安裝 `fast-check`：`npm install --save-dev fast-check`
   - 建立 `src/libs/imgRead/__tests__/imgRead.property.test.js`
   - 實作以下 7 個屬性測試（每個至少 100 次迭代）：
@@ -99,7 +99,7 @@ Task 9 (單元測試)   ──→ 依賴 Task 4, 5
   - **驗收：** `npm test -- --watchAll=false` 執行所有屬性測試通過
   - **對應需求：** 需求 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.4, 4.3, 4.4
 
-- [ ] 9. 撰寫單元測試（Example-Based）
+- [-] 9. 撰寫單元測試（Example-Based）
   - 建立 `src/pages/imgRead/__tests__/ImgReadPage.test.js`
   - 使用 `@testing-library/react` + `jest`，mock `useDetectImage` hook
   - 實作以下測試案例：

@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter, useNavigate, useLocation } from "react-router-dom";
 import { Layout, Menu, Typography } from "antd";
-import { SettingOutlined } from "@ant-design/icons";
+import { ScanOutlined, SettingOutlined } from "@ant-design/icons";
 import { QueryClient, QueryClientProvider } from "react-query";
 
 import AppRoutes from "./routes/AppRoutes";
@@ -52,6 +52,7 @@ const AppContent = () => {
                 label: "系統管理",
                 children: [{ key: "/admin/users", label: "帳號權限" }],
               },
+              { key: "/img-read", icon: <ScanOutlined />, label: "影像辨識" },
             ]}
           />
         </Sider>

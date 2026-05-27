@@ -1,6 +1,6 @@
 // ==========================================
-// ?��?統�?導出 API ??React Query Hooks
+// 統一匯出 API 與 React Query Hooks
 // ==========================================
 
-export * from "libs/waterFees";
+export * from "../libs/imgRead/imgRead";
 

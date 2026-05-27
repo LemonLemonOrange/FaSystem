@@ -13,8 +13,8 @@ ImgRead 是 Code WMS 系統的新功能模組，讓內部人員能夠上傳影�
 - **ImgRead_Page**：影像辨識功能的主頁面元件，路由路徑為 `/img-read`
 - **ImgUploader**：負責接收使用者選擇影像並觸發上傳的子元件
 - **DetectionResult**：YOLO API 回傳的單筆偵測結果，包含類別標籤、信心分數與邊界框座標
-- **YoloResponseDto**：後端 `POST /api/img-read/detect` 的回傳資料結構，包含 `detections`（`DetectionResult` 陣列）與 `elapsedMs`（執行時間，毫秒）
-- **YOLO_API**：後端 YOLO 物件偵測端點，路徑為 `POST /api/img-read/detect`，接受 `multipart/form-data` 格式的影像檔案，FormData 欄位名稱為 `image`
+- **YoloResponseDto**：後端 `POST /api/yolo/detect` 的回傳資料結構，包含 `detections`（`DetectionResult` 陣列）與 `elapsedMs`（執行時間，毫秒）
+- **YOLO_API**：後端 YOLO 物件偵測端點，路徑為 `POST /api/yolo/detect`，接受 `multipart/form-data` 格式的影像檔案，FormData 欄位名稱為 `image`
 - **Detect_Hook**：封裝 YOLO API 呼叫的 React Query mutation hook（`useDetectImage`），位於 `src/libs/imgRead/imgRead.js`
 - **支援格式**：JPEG、PNG、BMP
 - **檔案大小上限**：10 MB
@@ -47,7 +47,7 @@ ImgRead 是 Code WMS 系統的新功能模組，讓內部人員能夠上傳影�
 
 1. WHEN 使用者已選擇有效影像，THE **ImgRead_Page** SHALL 啟用「開始辨識」按鈕。
 2. WHILE 尚未選擇有效影像，THE **ImgRead_Page** SHALL 停用「開始辨識」按鈕，且按鈕呈現 disabled 視覺狀態。
-3. WHEN 使用者點擊「開始辨識」按鈕，THE **Detect_Hook** SHALL 以 `multipart/form-data` 格式將影像檔案 POST 至 `/api/img-read/detect`，FormData 欄位名稱為 `image`。
+3. WHEN 使用者點擊「開始辨識」按鈕，THE **Detect_Hook** SHALL 以 `multipart/form-data` 格式將影像檔案 POST 至 `/api/yolo/detect`，FormData 欄位名稱為 `image`。
 4. WHILE YOLO_API 請求進行中，THE **ImgRead_Page** SHALL 在「開始辨識」按鈕上顯示 Ant Design `loading` 狀態，並停用該按鈕以防止重複送出。
 5. IF YOLO_API 回傳 HTTP 狀態碼 4xx 或 5xx，THEN THE **ImgRead_Page** SHALL 以 Ant Design `message.error` 顯示繁體中文錯誤訊息「辨識失敗，請稍後再試」。
 6. IF 網路連線中斷或請求逾時（axios 拋出 network error 或 timeout error），THEN THE **ImgRead_Page** SHALL 以 Ant Design `message.error` 顯示繁體中文錯誤訊息「網路錯誤，請確認連線後重試」。
@@ -75,7 +75,7 @@ ImgRead 是 Code WMS 系統的新功能模組，讓內部人員能夠上傳影�
 #### 驗收標準
 
 1. THE **Detect_Hook** SHALL 位於 `src/libs/imgRead/imgRead.js`，並透過 `src/api/queries.js` 統一重新匯出。
-2. THE **Detect_Hook** SHALL 使用 `axios.post()` 搭配 `process.env.REACT_APP_API_BASE_URL` 環境變數，不透過 `apiClient` 實例，目標路徑為 `/api/img-read/detect`。
+2. THE **Detect_Hook** SHALL 使用 `axios.post()` 搭配 `process.env.REACT_APP_API_BASE_URL` 環境變數，不透過 `apiClient` 實例，目標路徑為 `/api/yolo/detect`。
 3. THE **Detect_Hook** SHALL 以 react-query v3 的 `useMutation` 實作，mutation function 接受 `File` 物件並回傳 `YoloResponseDto`，其結構至少包含 `detections`（陣列，每筆含 `label: string`、`confidence: number`、`bbox: { x, y, width, height }`）與 `elapsedMs: number`。
 4. WHEN `useMutation` 的 `mutate` 被呼叫，THE **Detect_Hook** SHALL 自動將 `File` 物件以欄位名稱 `image` 包裝為 `FormData`，並設定 `Content-Type: multipart/form-data` 標頭。
 5. THE **Detect_Hook** SHALL 匯出 `useDetectImage` hook，其回傳值包含 `mutate`、`isLoading`、`data`、`error`、`reset` 屬性。
