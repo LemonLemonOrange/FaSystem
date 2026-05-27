@@ -1,7 +1,7 @@
-import { useQuery } from 'react-query';
-import axios from 'axios';
+import { useQuery } from "react-query";
+import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:65326';
+const API_BASE_URL = globalThis?.process?.env?.REACT_APP_API_BASE_URL || "http://localhost:65326";
 
 const fetchDroughtAlert = async () => {
   try {
@@ -16,15 +16,15 @@ const fetchDroughtAlert = async () => {
 };
 
 /**
- * React Query Hook - ?–å??€?°æž¯?±é?è­¦è?å½±éŸ¿ç¸??
- * æ¯?10 ?†é??´æ–°ä¸€æ¬¡ï?å¾Œç«¯å·²æ?å¿«å?ï¼? *
- * @param {object} [options] - React Query é¡å??¸é?
- * @returns React Query çµæ?ï¼Œdata ??DroughtAlert | null
+ * React Query Hook - ?ï¿½ï¿½??ï¿½?ï¿½æž¯?ï¿½ï¿½?è­¦ï¿½?å½±éŸ¿ï¿½??
+ * ï¿½?10 ?ï¿½ï¿½??ï¿½æ–°ä¸€æ¬¡ï¿½?å¾Œç«¯å·²ï¿½?å¿«ï¿½?ï¿½? *
+ * @param {object} [options] - React Query é¡ï¿½??ï¿½ï¿½?
+ * @returns React Query çµï¿½?ï¼Œdata ??DroughtAlert | null
  */
 export const useDroughtAlert = (options) =>
   useQuery({
-    queryKey: ['droughtAlert'],
+    queryKey: ["droughtAlert"],
     queryFn: fetchDroughtAlert,
-    staleTime: 1000 * 60 * 10, // 10 ?†é?
+    staleTime: 1000 * 60 * 10, // 10 ?ï¿½ï¿½?
     ...options,
   });

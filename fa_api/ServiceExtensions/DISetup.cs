@@ -5,6 +5,7 @@ using fa_api.Schedule;
 using fa_api.Services.Mail;
 using fa_api.Services.Ncdr;
 using fa_api.Services.WraGov;
+using fa_api.Services.Yolo;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Microsoft.Extensions.Configuration;
@@ -57,6 +58,10 @@ namespace fa_api.ServiceExtensions
 
             // ========== 水利署服務 ==========
             services.AddScoped<IWraGovService, WraGovService>();
+
+            // ========== YOLO 服務 ==========
+            services.Configure<YoloSettings>(configuration.GetSection("YoloSettings"));
+            services.AddScoped<IYoloService, YoloService>();
 
             return services;
         }

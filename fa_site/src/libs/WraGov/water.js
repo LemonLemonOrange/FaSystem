@@ -1,5 +1,5 @@
-﻿import { useQuery } from 'react-query';
-import { apiClient } from '../api/request';
+﻿import { useQuery } from "react-query";
+import { apiClient } from "../api/request";
 
 
 /**
@@ -33,22 +33,22 @@ import { apiClient } from '../api/request';
 /**
  * ?��?水�?站基?��??? * @param {object} [params]
  * @returns {Promise<Array<WaterStation>>} 水�?站基?��??�陣?? */
-export const fetchWaterStation = (params) => apiClient.get(`/api/watergov/water/station`, { params });
+export const fetchWaterStation = (params) => apiClient.get("/api/watergov/water/station", { params });
 
 /**
  * ?��?水�??��?資�?
  * @param {object} [params]
  * @returns {Promise<Array<WaterRealTimeInfo>>} 水�??��?資�?資�????
  */
-export const fetchWaterRealTimeInfo = (params) => apiClient.get(`/api/watergov/water/real-time-info`, { params });
+export const fetchWaterRealTimeInfo = (params) => apiClient.get("/api/watergov/water/real-time-info", { params });
 
 /**
  * ?��?水�?警示資�?
  * @param {object} [params]
  * @returns {Promise<Array<WaterWarning>>} 水�?警示資�????
  */
-export const fetchWaterWarning = (params) => apiClient.get(`/api/watergov/water/warning`, { params });
+export const fetchWaterWarning = (params) => apiClient.get("/api/watergov/water/warning", { params });
 
-export const useWaterStation = (params, options) => useQuery({ queryKey: ['wraWaterStation', params], queryFn: () => fetchWaterStation(params), ...options });
-export const useWaterRealTimeInfo = (params, options) => useQuery({ queryKey: ['wraWaterRealTimeInfo', params], queryFn: () => fetchWaterRealTimeInfo(params), ...options });
-export const useWaterWarning = (params, options) => useQuery({ queryKey: ['wraWaterWarning', params], queryFn: () => fetchWaterWarning(params), ...options });
+export const useWaterStation = (params, options) => useQuery({ queryKey: ["wraWaterStation", params], queryFn: () => fetchWaterStation(params), ...options });
+export const useWaterRealTimeInfo = (params, options) => useQuery({ queryKey: ["wraWaterRealTimeInfo", params], queryFn: () => fetchWaterRealTimeInfo(params), ...options });
+export const useWaterWarning = (params, options) => useQuery({ queryKey: ["wraWaterWarning", params], queryFn: () => fetchWaterWarning(params), ...options });

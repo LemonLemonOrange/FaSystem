@@ -1,7 +1,8 @@
 ﻿import React, { useMemo } from "react";
+import PropTypes from "prop-types";
 import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 
-const GEO_URL = "https://cdn.jsdelivr.net/npm/taiwan-atlas/counties-10t.json";
+const GEO_URL = "./counties-10t.json";
 
 const COLOR_MAP = {
   green: { default: "#4CAF50", hover: "#388E3C" },
@@ -91,14 +92,12 @@ export default function TaiwanMap({ warnings = [] }) {
       }
     });
 
-    console.log('areas', areas);
-    console.log('markers', marks);
     return { highlightedAreas: areas, markers: marks };
   }, [warnings]);
 
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ center: [121, 23.8], scale: 8000 }}
@@ -154,3 +153,13 @@ export default function TaiwanMap({ warnings = [] }) {
     </div>
   );
 }
+
+TaiwanMap.propTypes = {
+  warnings: PropTypes.arrayOf(
+    PropTypes.shape({
+      region: PropTypes.string,
+      colorClass: PropTypes.string,
+      status: PropTypes.string,
+    })
+  ),
+};

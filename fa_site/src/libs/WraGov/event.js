@@ -1,5 +1,5 @@
-import { useQuery } from 'react-query';
-import { wraApi } from './wraApi';
+import { useQuery } from "react-query";
+import { wraApi } from "./wraApi";
 
 /** @typedef {import('./wraApi').QueryParams} QueryParams */
 
@@ -20,4 +20,4 @@ import { wraApi } from './wraApi';
  */
 export const fetchEventByYear = (year, params) => wraApi.get(`/v1/Event/Year/${year}`, { params }).then(res => res.data);
 
-export const useEventByYear = (year, params, options) => useQuery({ queryKey: ['wraEvent', year, params], queryFn: () => fetchEventByYear(year, params), enabled: !!year, ...options });
+export const useEventByYear = (year, params, options) => useQuery({ queryKey: ["wraEvent", year, params], queryFn: () => fetchEventByYear(year, params), enabled: !!year, ...options });

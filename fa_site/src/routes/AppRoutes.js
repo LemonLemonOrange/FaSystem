@@ -1,8 +1,8 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import Users from '../components/Users/Users';
-import WaterDashboard from '../pages/waterDashboard/WaterDashboard';
+import Users from "../components/Users/Users";
+import WaterDashboard from "../pages/waterDashboard/WaterDashboard";
 
 const AppRoutes = () => (
   <Routes>

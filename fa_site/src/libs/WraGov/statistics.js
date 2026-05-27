@@ -1,5 +1,5 @@
-﻿import { useQuery } from 'react-query';
-import { apiClient } from '../api/request';
+﻿import { useQuery } from "react-query";
+import { apiClient } from "../api/request";
 
 
 /**
@@ -45,8 +45,8 @@ export const fetchStatisticsWaterFacility = (eventNo) => apiClient.get(`/api/wat
  * @param {object} [params]
  * @returns {Promise<Array<FloodDefenseOperator>>} ?��?資�?統�?資�????
  */
-export const fetchStatisticsFloodDefenseMaterial = (params) => apiClient.get(`/api/watergov/statistics/flood-defense-material`, { params });
+export const fetchStatisticsFloodDefenseMaterial = (params) => apiClient.get("/api/watergov/statistics/flood-defense-material", { params });
 
-export const useStatisticsFlooding = (eventNo, options) => useQuery({ queryKey: ['wraStatisticsFlooding', eventNo], queryFn: () => fetchStatisticsFlooding(eventNo), enabled: !!eventNo, ...options });
-export const useStatisticsWaterFacility = (eventNo, options) => useQuery({ queryKey: ['wraStatisticsWaterFacility', eventNo], queryFn: () => fetchStatisticsWaterFacility(eventNo), enabled: !!eventNo, ...options });
-export const useStatisticsFloodDefenseMaterial = (params, options) => useQuery({ queryKey: ['wraStatisticsFloodDefenseMaterial', params], queryFn: () => fetchStatisticsFloodDefenseMaterial(params), ...options });
+export const useStatisticsFlooding = (eventNo, options) => useQuery({ queryKey: ["wraStatisticsFlooding", eventNo], queryFn: () => fetchStatisticsFlooding(eventNo), enabled: !!eventNo, ...options });
+export const useStatisticsWaterFacility = (eventNo, options) => useQuery({ queryKey: ["wraStatisticsWaterFacility", eventNo], queryFn: () => fetchStatisticsWaterFacility(eventNo), enabled: !!eventNo, ...options });
+export const useStatisticsFloodDefenseMaterial = (params, options) => useQuery({ queryKey: ["wraStatisticsFloodDefenseMaterial", params], queryFn: () => fetchStatisticsFloodDefenseMaterial(params), ...options });

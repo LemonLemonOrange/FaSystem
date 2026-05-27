@@ -1,5 +1,5 @@
-﻿import { useQuery } from 'react-query';
-import { apiClient } from '../api/request';
+﻿import { useQuery } from "react-query";
+import { apiClient } from "../api/request";
 
 
 /**
@@ -20,7 +20,7 @@ import { apiClient } from '../api/request';
  * @param {object} [params]
  * @returns {Promise<Array<City>>} 包含所有縣市的資料陣列
  */
-export const fetchCity = (params) => apiClient.get(`/api/watergov/basic/city`, { params });
+export const fetchCity = (params) => apiClient.get("/api/watergov/basic/city", { params });
 
 /**
  * ?��??��?�???��??��??? * @param {string} city - �???�稱（�?如�??��?市�?
@@ -29,5 +29,5 @@ export const fetchCity = (params) => apiClient.get(`/api/watergov/basic/city`, {
  */
 export const fetchTown = (city, params) => apiClient.get(`/api/watergov/basic/${city}/town`, { params });
 
-export const useCity = (params, options) => useQuery({ queryKey: ['wraCity', params], queryFn: () => fetchCity(params), ...options });
-export const useTown = (city, params, options) => useQuery({ queryKey: ['wraTown', city, params], queryFn: () => fetchTown(city, params), enabled: !!city, ...options });
+export const useCity = (params, options) => useQuery({ queryKey: ["wraCity", params], queryFn: () => fetchCity(params), ...options });
+export const useTown = (city, params, options) => useQuery({ queryKey: ["wraTown", city, params], queryFn: () => fetchTown(city, params), enabled: !!city, ...options });

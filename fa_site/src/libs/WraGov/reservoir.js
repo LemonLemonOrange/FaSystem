@@ -1,5 +1,5 @@
-﻿import { useQuery } from 'react-query';
-import { apiClient } from '../api/request';
+﻿import { useQuery } from "react-query";
+import { apiClient } from "../api/request";
 
     
 /**
@@ -65,38 +65,38 @@ import { apiClient } from '../api/request';
  * @param {object} [params]
  * @returns {Promise<Array<ReservoirStation>>} 水庫?�本資�????
  */
-export const fetchReservoirStation = (params) => apiClient.get(`/api/watergov/reservoir/station`, { params });
+export const fetchReservoirStation = (params) => apiClient.get("/api/watergov/reservoir/station", { params });
 
 /**
  * ?��?水庫?��?資�?
  * @param {object} [params]
  * @returns {Promise<Array<ReservoirRealTimeInfo>>} 水庫?��?資�?資�????
  */
-export const fetchReservoirRealTimeInfo = (params) => apiClient.get(`/api/watergov/reservoir/real-time-info`, { params });
+export const fetchReservoirRealTimeInfo = (params) => apiClient.get("/api/watergov/reservoir/real-time-info", { params });
 
 /**
  * ?��?水庫統�?資�?
  * @param {object} [params]
  * @returns {Promise<Array<ReservoirDaily>>} 水庫統�?資�????
  */
-export const fetchReservoirDaily = (params) => apiClient.get(`/api/watergov/reservoir/daily`, { params });
+export const fetchReservoirDaily = (params) => apiClient.get("/api/watergov/reservoir/daily", { params });
 
 /**
  * ?��?水庫警示資�?
  * @param {object} [params]
  * @returns {Promise<Array<ReservoirWarning>>} 水庫警示資�????
  */
-export const fetchReservoirWarning = (params) => apiClient.get(`/api/watergov/reservoir/warning`, { params });
+export const fetchReservoirWarning = (params) => apiClient.get("/api/watergov/reservoir/warning", { params });
 
 /**
  * ?��?水庫警�?影響範�?
  * @param {object} [params]
  * @returns {Promise<Array<ReservoirAffectedArea>>} 水庫警�?影響範�?資�????
  */
-export const fetchReservoirAffectedArea = (params) => apiClient.get(`/api/watergov/reservoir/affected-area`, { params });
+export const fetchReservoirAffectedArea = (params) => apiClient.get("/api/watergov/reservoir/affected-area", { params });
 
-export const useReservoirStation = (params, options) => useQuery({ queryKey: ['wraReservoirStation', params], queryFn: () => fetchReservoirStation(params), ...options });
-export const useReservoirRealTimeInfo = (params, options) => useQuery({ queryKey: ['wraReservoirRealTimeInfo', params], queryFn: () => fetchReservoirRealTimeInfo(params), ...options });
-export const useReservoirDaily = (params, options) => useQuery({ queryKey: ['wraReservoirDaily', params], queryFn: () => fetchReservoirDaily(params), ...options });
-export const useReservoirWarning = (params, options) => useQuery({ queryKey: ['wraReservoirWarning', params], queryFn: () => fetchReservoirWarning(params), ...options });
-export const useReservoirAffectedArea = (params, options) => useQuery({ queryKey: ['wraReservoirAffectedArea', params], queryFn: () => fetchReservoirAffectedArea(params), ...options });
+export const useReservoirStation = (params, options) => useQuery({ queryKey: ["wraReservoirStation", params], queryFn: () => fetchReservoirStation(params), ...options });
+export const useReservoirRealTimeInfo = (params, options) => useQuery({ queryKey: ["wraReservoirRealTimeInfo", params], queryFn: () => fetchReservoirRealTimeInfo(params), ...options });
+export const useReservoirDaily = (params, options) => useQuery({ queryKey: ["wraReservoirDaily", params], queryFn: () => fetchReservoirDaily(params), ...options });
+export const useReservoirWarning = (params, options) => useQuery({ queryKey: ["wraReservoirWarning", params], queryFn: () => fetchReservoirWarning(params), ...options });
+export const useReservoirAffectedArea = (params, options) => useQuery({ queryKey: ["wraReservoirAffectedArea", params], queryFn: () => fetchReservoirAffectedArea(params), ...options });

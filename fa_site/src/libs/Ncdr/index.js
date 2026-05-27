@@ -1,1 +1,1 @@
-export { useDroughtAlert } from './disaster';
+export { useDroughtAlert } from "./disaster";

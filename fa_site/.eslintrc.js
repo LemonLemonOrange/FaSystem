@@ -33,6 +33,13 @@ module.exports = {
       "parserOptions": {
         // script 表示使用傳統 script 模式，而不是 ES module
         "sourceType": "script"
+      },
+
+      // 設定檔本身採 JSON 風格鍵名與雙引號，避免與專案程式碼規則衝突
+      "rules": {
+        "quotes": [
+          "off"
+        ]
       }
     }
   ],

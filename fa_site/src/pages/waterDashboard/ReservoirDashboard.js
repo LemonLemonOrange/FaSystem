@@ -1,55 +1,56 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import './WaterDashboard.css';
-import ReservoirCard from './components/ReservoirCard';
-import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
-import { useReservoirStation, useReservoirRealTimeInfo } from 'libs/hooks/api/wrSituation/WraGov/reservoir';
-import { Spin, Button, Popconfirm, message } from 'antd';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import "./WaterDashboard.css";
+import ReservoirCard from "./components/ReservoirCard";
+import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import useReservoirStation from "libs/hooks/api/wrSituation/WraGov/useReservoirStation";
+import useReservoirRealTimeInfo from "libs/hooks/api/wrSituation/WraGov/useReservoirRealTimeInfo";
+import { Spin, Button, Popconfirm, message } from "antd";
 
-const GEO_URL = 'https://cdn.jsdelivr.net/npm/taiwan-atlas/counties-10t.json';
+const GEO_URL = "https://cdn.jsdelivr.net/npm/taiwan-atlas/counties-10t.json";
 
 // 水庫實際經緯度
 const reservoirMapData = [
-  { name: '寶山水庫', coords: [121.04, 24.78] },
-  { name: '寶山第二水庫', coords: [121.07, 24.74] },
-  { name: '永和山水庫', coords: [120.96, 24.62] },
-  { name: '石門水庫', coords: [121.24, 24.88] },
-  { name: '翡翠水庫', coords: [121.6, 24.93] },
-  { name: '鯉魚潭水庫', coords: [120.86, 24.3] },
-  { name: '德基水庫', coords: [121.12, 24.22] },
-  { name: '南化水庫', coords: [120.45, 23.12] },
-  { name: '蘭潭水庫', coords: [120.53, 23.46] },
-  { name: '仁義潭水庫', coords: [120.51, 23.44] },
-  { name: '曾文水庫', coords: [120.47, 23.26] },
-  { name: '烏山頭水庫', coords: [120.33, 23.12] },
+  { name: "寶山水庫", coords: [121.04, 24.78] },
+  { name: "寶山第二水庫", coords: [121.07, 24.74] },
+  { name: "永和山水庫", coords: [120.96, 24.62] },
+  { name: "石門水庫", coords: [121.24, 24.88] },
+  { name: "翡翠水庫", coords: [121.6, 24.93] },
+  { name: "鯉魚潭水庫", coords: [120.86, 24.3] },
+  { name: "德基水庫", coords: [121.12, 24.22] },
+  { name: "南化水庫", coords: [120.45, 23.12] },
+  { name: "蘭潭水庫", coords: [120.53, 23.46] },
+  { name: "仁義潭水庫", coords: [120.51, 23.44] },
+  { name: "曾文水庫", coords: [120.47, 23.26] },
+  { name: "烏山頭水庫", coords: [120.33, 23.12] },
 ];
 
 // 卡片預設位移（可拖曳後儲存）
 const DEFAULT_CARD_OFFSETS = {
-  '寶山水庫': { dx: -525, dy: -152 },
-  '寶山第二水庫': { dx: -575, dy: 10 },
-  '翡翠水庫': { dx: 256, dy: 53 },
-  '石門水庫': { dx: -145, dy: 242 },
-  '曾文水庫': { dx: -359, dy: -37 },
-  '蘭潭水庫': { dx: 412, dy: 199 },
-  '烏山頭水庫': { dx: -321, dy: 121 },
-  '德基水庫': { dx: 416, dy: 54 },
-  '永和山水庫': { dx: -559, dy: 154 },
-  '鯉魚潭水庫': { dx: 484, dy: 248 },
-  '南化水庫': { dx: 319, dy: -128 },
-  '仁義潭水庫': { dx: 224, dy: 258 },
+  "寶山水庫": { dx: -525, dy: -152 },
+  "寶山第二水庫": { dx: -575, dy: 10 },
+  "翡翠水庫": { dx: 256, dy: 53 },
+  "石門水庫": { dx: -145, dy: 242 },
+  "曾文水庫": { dx: -359, dy: -37 },
+  "蘭潭水庫": { dx: 412, dy: 199 },
+  "烏山頭水庫": { dx: -321, dy: 121 },
+  "德基水庫": { dx: 416, dy: 54 },
+  "永和山水庫": { dx: -559, dy: 154 },
+  "鯉魚潭水庫": { dx: 484, dy: 248 },
+  "南化水庫": { dx: 319, dy: -128 },
+  "仁義潭水庫": { dx: 224, dy: 258 },
 };
 
 // 標記點預設位移（可拖曳後儲存）
 const DEFAULT_MARKER_OFFSETS = {
-  '仁義潭水庫': { dx: 88, dy: 80 },
-  '蘭潭水庫': { dx: 98, dy: -22 },
-  '永和山水庫': { dx: -64, dy: 127 },
-  '曾文水庫': { dx: 37, dy: -97 },
-  '南化水庫': { dx: 32, dy: 31 },
-  '烏山頭水庫': { dx: 57, dy: -33 },
-  '寶山第二水庫': { dx: -44, dy: 47 },
-  '石門水庫': { dx: -23, dy: 35 },
-  '翡翠水庫': { dx: -112, dy: 68 },
+  "仁義潭水庫": { dx: 88, dy: 80 },
+  "蘭潭水庫": { dx: 98, dy: -22 },
+  "永和山水庫": { dx: -64, dy: 127 },
+  "曾文水庫": { dx: 37, dy: -97 },
+  "南化水庫": { dx: 32, dy: 31 },
+  "烏山頭水庫": { dx: 57, dy: -33 },
+  "寶山第二水庫": { dx: -44, dy: 47 },
+  "石門水庫": { dx: -23, dy: 35 },
+  "翡翠水庫": { dx: -112, dy: 68 },
 };
 
 // 與 react-simple-maps 的 geoMercator 參數一致
@@ -75,13 +76,13 @@ function latlngToPixel(lng, lat, containerW, containerH) {
 
 const ReservoirDashboard = () => {
   const [hovered, setHovered] = useState(null);
-  const [layoutMode, setLayoutMode] = useState('auto');
+  const [layoutMode, setLayoutMode] = useState("auto");
   const containerRef = useRef(null);
   const [containerSize, setContainerSize] = useState({ w: 900, h: 675 });
 
   const [dragOffsets, setDragOffsets] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('reservoir-card-offsets'));
+      const saved = JSON.parse(localStorage.getItem("reservoir-card-offsets"));
       return saved ?? DEFAULT_CARD_OFFSETS;
     } catch {
       return DEFAULT_CARD_OFFSETS;
@@ -92,7 +93,7 @@ const ReservoirDashboard = () => {
 
   const [markerOffsets, setMarkerOffsets] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('reservoir-marker-offsets'));
+      const saved = JSON.parse(localStorage.getItem("reservoir-marker-offsets"));
       return saved ?? DEFAULT_MARKER_OFFSETS;
     } catch {
       return DEFAULT_MARKER_OFFSETS;
@@ -140,16 +141,16 @@ const ReservoirDashboard = () => {
 
     const onUp = () => {
       draggingRef.current = null;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
       setDragOffsets((prev) => {
-        localStorage.setItem('reservoir-card-offsets', JSON.stringify(prev));
+        localStorage.setItem("reservoir-card-offsets", JSON.stringify(prev));
         return prev;
       });
     };
 
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   }, [dragOffsets]);
 
   const handleMarkerMouseDown = useCallback((e, name) => {
@@ -178,21 +179,21 @@ const ReservoirDashboard = () => {
 
     const onUp = () => {
       markerDraggingRef.current = null;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
       setMarkerOffsets((prev) => {
-        localStorage.setItem('reservoir-marker-offsets', JSON.stringify(prev));
+        localStorage.setItem("reservoir-marker-offsets", JSON.stringify(prev));
         return prev;
       });
     };
 
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
   }, [markerOffsets]);
 
   const handleReset = useCallback(() => {
-    localStorage.removeItem('reservoir-card-offsets');
-    localStorage.removeItem('reservoir-marker-offsets');
+    localStorage.removeItem("reservoir-card-offsets");
+    localStorage.removeItem("reservoir-marker-offsets");
     setDragOffsets(DEFAULT_CARD_OFFSETS);
     setMarkerOffsets(DEFAULT_MARKER_OFFSETS);
   }, []);
@@ -200,30 +201,30 @@ const ReservoirDashboard = () => {
   const handleExport = useCallback(() => {
     const cardLines = Object.entries(dragOffsets)
       .map(([name, { dx, dy }]) => `  '${name}': { dx: ${Math.round(dx)}, dy: ${Math.round(dy)} },`)
-      .join('\n');
+      .join("\n");
     const markerLines = Object.entries(markerOffsets)
       .map(([name, { dx, dy }]) => `  '${name}': { dx: ${Math.round(dx)}, dy: ${Math.round(dy)} },`)
-      .join('\n');
+      .join("\n");
 
     const text = `const DEFAULT_CARD_OFFSETS = {\n${cardLines}\n};\n\nconst DEFAULT_MARKER_OFFSETS = {\n${markerLines}\n};`;
     navigator.clipboard.writeText(text).then(() => {
-      message.success('已複製卡片與標記點位置到剪貼簿');
+      message.success("已複製卡片與標記點位置到剪貼簿");
     });
   }, [dragOffsets, markerOffsets]);
 
   const reservoirs = useMemo(() => {
     if (!stations || !realTimeInfos) {
-      return reservoirMapData.map((d) => ({ ...d, volume: '-', percent: 0 }));
+      return reservoirMapData.map((d) => ({ ...d, volume: "-", percent: 0 }));
     }
 
     return reservoirMapData.map((mapData) => {
       const station = stations.find((s) => s.stationName === mapData.name);
-      if (!station) return { ...mapData, volume: '-', percent: 0 };
+      if (!station) return { ...mapData, volume: "-", percent: 0 };
 
       const realTime = realTimeInfos.find((r) => r.stationNo === station.stationNo);
       const volume = realTime?.effectiveStorage != null
         ? Math.round(realTime.effectiveStorage).toLocaleString()
-        : '-';
+        : "-";
       const percent = realTime?.percentageOfStorage != null
         ? Number(realTime.percentageOfStorage.toFixed(2))
         : 0;
@@ -247,49 +248,49 @@ const ReservoirDashboard = () => {
   }, [reservoirs, containerSize]);
 
   const updateTime = useMemo(() => {
-    if (!realTimeInfos || realTimeInfos.length === 0) return '';
+    if (!realTimeInfos || realTimeInfos.length === 0) return "";
 
     const timeStr = realTimeInfos[0].time;
     let date = new Date(timeStr);
 
     if (isNaN(date.getTime())) {
-      const parts = timeStr.split(' ');
-      const dateParts = parts[0].split('/');
+      const parts = timeStr.split(" ");
+      const dateParts = parts[0].split("/");
       if (dateParts.length === 3) {
-        date = new Date(`${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}T${parts[1]}`);
+        date = new Date(`${dateParts[2]}-${dateParts[0].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}T${parts[1]}`);
       }
     }
 
-    if (isNaN(date.getTime())) return '';
+    if (isNaN(date.getTime())) return "";
 
     const twYear = date.getFullYear() - 1911;
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
     return `${twYear}-${month}-${day} ${hours}時`;
   }, [realTimeInfos]);
 
   if (isStationsLoading || isRealTimeLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
         <Spin size="large" tip="資料載入中..." />
       </div>
     );
   }
 
   const isMobileLayout = containerSize.w > 0 && containerSize.w < 768;
-  const isGridLayout = layoutMode === 'grid' || (layoutMode === 'auto' && isMobileLayout);
+  const isGridLayout = layoutMode === "grid" || (layoutMode === "auto" && isMobileLayout);
 
   if (isGridLayout) {
     return (
-      <div ref={containerRef} className="mobile-grid-view" style={{ position: 'absolute', inset: 0 }}>
-        <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 50 }}>
-          <Button size="small" onClick={() => setLayoutMode('map')}>
+      <div ref={containerRef} className="mobile-grid-view" style={{ position: "absolute", inset: 0 }}>
+        <div style={{ position: "absolute", top: 8, right: 8, zIndex: 50 }}>
+          <Button size="small" onClick={() => setLayoutMode("map")}>
             使用地圖檢視
           </Button>
         </div>
-        <div style={{ textAlign: 'center', marginBottom: 20, color: '#0abcce', fontSize: '1.2rem', fontWeight: 'bold' }}>
-          水庫蓄水圖 {updateTime ? `(${updateTime})` : ''}
+        <div style={{ textAlign: "center", marginBottom: 20, color: "#0abcce", fontSize: "1.2rem", fontWeight: "bold" }}>
+          水庫蓄水圖 {updateTime ? `(${updateTime})` : ""}
         </div>
         <div className="reservoir-grid">
           {reservoirs.map((res) => (
@@ -309,13 +310,13 @@ const ReservoirDashboard = () => {
   }
 
   return (
-    <div ref={containerRef} style={{ position: 'absolute', inset: 0 }}>
+    <div ref={containerRef} style={{ position: "absolute", inset: 0 }}>
       <div className="dashboard-title">
-        水庫蓄水圖 {updateTime ? `(${updateTime})` : ''}
+        水庫蓄水圖 {updateTime ? `(${updateTime})` : ""}
       </div>
 
-      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 50, display: 'flex', gap: 6 }}>
-        <Button size="small" onClick={() => setLayoutMode('grid')}>
+      <div style={{ position: "absolute", top: 8, right: 8, zIndex: 50, display: "flex", gap: 6 }}>
+        <Button size="small" onClick={() => setLayoutMode("grid")}>
           使用網格檢視
         </Button>
         <Button size="small" onClick={handleExport}>
@@ -338,7 +339,7 @@ const ReservoirDashboard = () => {
         projectionConfig={{ center: [121, 23.8], scale: 8000 }}
         width={850}
         height={1200}
-        style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
+        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
       >
         <Geographies geography={GEO_URL} parseNodeName="counties">
           {({ geographies }) =>
@@ -350,16 +351,16 @@ const ReservoirDashboard = () => {
                 stroke="#FFFFFF"
                 strokeWidth={0.8}
                 style={{
-                  default: { outline: 'none' },
-                  hover: { fill: '#b0d6ea', outline: 'none' },
-                  pressed: { outline: 'none' },
+                  default: { outline: "none" },
+                  hover: { fill: "#b0d6ea", outline: "none" },
+                  pressed: { outline: "none" },
                 }}
               />
             ))}
         </Geographies>
       </ComposableMap>
 
-      <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 6, pointerEvents: 'none' }}>
+      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 6, pointerEvents: "none" }}>
         {cardPositions.map((pos) => {
           const mOff = markerOffsets[pos.name] ?? { dx: 0, dy: 0 };
           const cOff = dragOffsets[pos.name] ?? { dx: 0, dy: 0 };
@@ -378,18 +379,18 @@ const ReservoirDashboard = () => {
                 y2={cardY}
                 stroke="#081c1fff"
                 strokeWidth={pos.name === hovered ? 2.5 : 1.2}
-                strokeDasharray={pos.name === hovered ? '0' : '4 3'}
+                strokeDasharray={pos.name === hovered ? "0" : "4 3"}
                 opacity={pos.name === hovered ? 1 : 0.55}
-                style={{ transition: isDraggingMarker ? 'none' : 'all 0.3s' }}
+                style={{ transition: isDraggingMarker ? "none" : "all 0.3s" }}
               />
               <circle
                 cx={markerX}
                 cy={markerY}
                 r={pos.name === hovered ? 9 : 6}
-                fill={pos.name === hovered ? '#ffc107' : '#F5A623'}
+                fill={pos.name === hovered ? "#ffc107" : "#F5A623"}
                 stroke="#fff"
                 strokeWidth={2}
-                style={{ transition: isDraggingMarker ? 'none' : 'r 0.2s, fill 0.2s' }}
+                style={{ transition: isDraggingMarker ? "none" : "r 0.2s, fill 0.2s" }}
               />
             </g>
           );
@@ -410,13 +411,13 @@ const ReservoirDashboard = () => {
             onMouseLeave={() => setHovered(null)}
             onMouseDown={(e) => handleMarkerMouseDown(e, pos.name)}
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: markerX - size / 2,
               top: markerY - size / 2,
               width: size,
               height: size,
-              borderRadius: '50%',
-              cursor: isDraggingMarker ? 'grabbing' : 'grab',
+              borderRadius: "50%",
+              cursor: isDraggingMarker ? "grabbing" : "grab",
               zIndex: 8,
             }}
           />
@@ -437,12 +438,12 @@ const ReservoirDashboard = () => {
             key={`card-${pos.name}`}
             onMouseDown={(e) => handleCardMouseDown(e, pos.name)}
             style={{
-              position: 'absolute',
+              position: "absolute",
               left: finalX,
               top: finalY,
               zIndex: pos.name === hovered ? 30 : 10,
-              cursor: isDragging ? 'grabbing' : 'grab',
-              userSelect: 'none',
+              cursor: isDragging ? "grabbing" : "grab",
+              userSelect: "none",
             }}
           >
             <ReservoirCard
@@ -459,15 +460,15 @@ const ReservoirDashboard = () => {
 
       <div
         style={{
-          position: 'absolute',
+          position: "absolute",
           bottom: 15,
-          width: '100%',
-          textAlign: 'center',
-          color: '#fff',
-          fontSize: '0.85rem',
+          width: "100%",
+          textAlign: "center",
+          color: "#fff",
+          fontSize: "0.85rem",
           zIndex: 10,
-          textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-          pointerEvents: 'none',
+          textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+          pointerEvents: "none",
         }}
       >
         <div>即時蓄水量單位：萬立方公尺</div>

@@ -1,14 +1,14 @@
-﻿import axios from 'axios';
+﻿import axios from "axios";
 
-export const baseURL = window.env?.REACT_APP_API_BASE_URL || 'http://localhost:65326';
+export const baseURL = window.env?.REACT_APP_API_BASE_URL || "http://localhost:65326";
 
 /** 共用 axios instance */
 export const apiClient = axios.create({
   baseURL,
   timeout: 15000,
   headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
+    "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
@@ -30,16 +30,18 @@ apiClient.interceptors.response.use(
     const message = error.response?.data?.message || error.message;
 
     if (status === 401) {
-      console.warn('[apiClient] 401 未授權');
+      console.warn("[apiClient] 401 未授權");
       // 可在此 redirect 至登入頁
     } else if (status === 403) {
-      console.warn('[apiClient] 403 禁止存取');
+      console.warn("[apiClient] 403 禁止存取");
     } else if (status >= 500) {
       console.error(`[apiClient] 伺服器錯誤 ${status}:`, message);
     } else if (!error.response) {
-      console.error('[apiClient] 網路錯誤或請求逾時:', message);
+      console.error("[apiClient] 網路錯誤或請求逾時:", message);
     }
 
     return Promise.reject(error);
   }
 );
+
+export default apiClient;

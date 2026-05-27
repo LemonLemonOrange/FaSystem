@@ -1,5 +1,5 @@
-﻿import { useQuery } from 'react-query';
-import { apiClient } from '../api/request';
+﻿import { useQuery } from "react-query";
+import { apiClient } from "../api/request";
 
 
 /**
@@ -18,6 +18,6 @@ import { apiClient } from '../api/request';
  * @param {object} [params]
  * @returns {Promise<Array<MaterialLocation>>} 防汛資材位置資料陣列
  */
-export const fetchFloodDefenseMaterialLocation = (params) => apiClient.get(`/api/watergov/flood-defense/material-location`, { params });
+export const fetchFloodDefenseMaterialLocation = (params) => apiClient.get("/api/watergov/flood-defense/material-location", { params });
 
-export const useFloodDefenseMaterialLocation = (params, options) => useQuery({ queryKey: ['wraFloodDefenseMaterialLocation', params], queryFn: () => fetchFloodDefenseMaterialLocation(params), ...options });
+export const useFloodDefenseMaterialLocation = (params, options) => useQuery({ queryKey: ["wraFloodDefenseMaterialLocation", params], queryFn: () => fetchFloodDefenseMaterialLocation(params), ...options });

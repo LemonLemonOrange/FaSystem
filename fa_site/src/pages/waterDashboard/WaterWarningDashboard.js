@@ -1,22 +1,22 @@
-import { useMemo } from 'react';
-import TaiwanMap from './components/TaiwanMap';
-import './WaterWarningDashboard.css';
-import { useDroughtAlert } from 'libs/hooks/api/wrSituation/Ncdr';
+import { useMemo } from "react";
+import TaiwanMap from "./components/TaiwanMap";
+import "./WaterWarningDashboard.css";
+import { useDroughtAlert } from "libs/hooks/api/wrSituation/Ncdr";
 
 /** severity → { colorClass, status } 對應表 */
 const SEVERITY_MAP = {
-  Minor: { colorClass: 'green', status: '水情提醒' },
-  Moderate: { colorClass: 'yellow', status: '減壓供水' },
-  Severe: { colorClass: 'orange', status: '減量供水' },
-  Extreme: { colorClass: 'red', status: '分區供水或定點供水' },
+  Minor: { colorClass: "green", status: "水情提醒" },
+  Moderate: { colorClass: "yellow", status: "減壓供水" },
+  Severe: { colorClass: "orange", status: "減量供水" },
+  Extreme: { colorClass: "red", status: "分區供水或定點供水" },
 };
 
 const WaterWarningDashboard = () => {
   const { data: alert, isLoading } = useDroughtAlert();
-  console.log('alert', alert);
+  console.log("alert", alert);
 
   const publishDate = useMemo(() => {
-    if (!alert?.info?.effective) return '---';
+    if (!alert?.info?.effective) return "---";
     const date = new Date(alert.info.effective);
     if (isNaN(date.getTime())) return alert.info.effective;
     const twYear = date.getFullYear() - 1911;
@@ -40,8 +40,8 @@ const WaterWarningDashboard = () => {
 
   if (isLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '600px' }}>
-        <h2 style={{ color: '#0abcce' }}>資料載入中...</h2>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "600px" }}>
+        <h2 style={{ color: "#0abcce" }}>資料載入中...</h2>
       </div>
     );
   }
@@ -81,7 +81,7 @@ const WaterWarningDashboard = () => {
 
         <div className="status-list-panel">
           {warnings.length === 0 ? (
-            <div style={{ color: '#555', textAlign: 'center', padding: '20px 0' }}>目前無水情警戒</div>
+            <div style={{ color: "#555", textAlign: "center", padding: "20px 0" }}>目前無水情警戒</div>
           ) : (
             warnings.map((w, idx) => (
               <div key={idx} className="status-item">
@@ -96,7 +96,7 @@ const WaterWarningDashboard = () => {
         <div className="download-panel">
           {alert?.info ? (
             <a
-              href={`https://www.wra.gov.tw/EarlyWarning.aspx?n=18804&sms=0`}
+              href={"https://www.wra.gov.tw/EarlyWarning.aspx?n=18804&sms=0"}
               target="_blank"
               rel="noreferrer"
               className="download-btn"
