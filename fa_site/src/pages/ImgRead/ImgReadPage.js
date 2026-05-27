@@ -11,10 +11,10 @@ const columns = [
     key: "confidence",
     render: (val) => formatConfidence(val),
   },
-  { title: "X", dataIndex: ["bbox", "x"], key: "x" },
-  { title: "Y", dataIndex: ["bbox", "y"], key: "y" },
-  { title: "寬度", dataIndex: ["bbox", "width"], key: "width" },
-  { title: "高度", dataIndex: ["bbox", "height"], key: "height" },
+  { title: "X", dataIndex: "x", key: "x" },
+  { title: "Y", dataIndex: "y", key: "y" },
+  { title: "寬度", dataIndex: "width", key: "width" },
+  { title: "高度", dataIndex: "height", key: "height" },
 ];
 
 const ImgReadPage = () => {
@@ -40,6 +40,7 @@ const ImgReadPage = () => {
           reset();
         }}
         disabled={isLoading}
+        detections={data?.detections}
       />
       <div style={{ marginTop: 16 }}>
         <Button
@@ -61,7 +62,8 @@ const ImgReadPage = () => {
                 style={{ marginTop: 8 }}
                 dataSource={data.detections}
                 columns={columns}
-                rowKey={(_, i) => i}
+                rowKey={(record, index) => `${record.label}-${record.x}-${record.y}-${index}`}
+                pagination={false}
               />
             </div>
           ) : (
