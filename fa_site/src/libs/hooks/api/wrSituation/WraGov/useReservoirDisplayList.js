@@ -11,6 +11,10 @@ const fetchReservoirDisplayList = async (params) => {
     return response.data;
   }
 
+  if (Array.isArray(response?.value)) {
+    return response.value;
+  }
+
   return [];
 };
 

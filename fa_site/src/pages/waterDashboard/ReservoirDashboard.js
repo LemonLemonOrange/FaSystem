@@ -5,6 +5,7 @@ import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps
 import { geoMercator } from "d3-geo";
 import useReservoirDisplayList from "libs/hooks/api/wrSituation/WraGov/useReservoirDisplayList";
 import useReservoirRealTimeInfo from "libs/hooks/api/wrSituation/WraGov/useReservoirRealTimeInfo";
+import useReservoirStation from "libs/hooks/api/wrSituation/WraGov/useReservoirStation";
 import { Spin, Button, Popconfirm, message } from "antd";
 
 const GEO_URL = "/counties-10t.json";
@@ -14,49 +15,62 @@ const DEFAULT_CARD_OFFSETS = {
   "寶山水庫": { dx: -525, dy: -152 },
   "寶山第二水庫": { dx: -575, dy: 10 },
   "翡翠水庫": { dx: 256, dy: 53 },
-  "石門水庫": { dx: -145, dy: 242 },
-  "曾文水庫": { dx: -359, dy: -37 },
+  "石門水庫": { dx: -263, dy: -103 },
+  "曾文水庫": { dx: -296, dy: 65 },
   "蘭潭水庫": { dx: 412, dy: 199 },
   "烏山頭水庫": { dx: -321, dy: 121 },
-  "德基水庫": { dx: 416, dy: 54 },
+  "德基水庫": { dx: 379, dy: 22 },
   "永和山水庫": { dx: -559, dy: 154 },
-  "鯉魚潭水庫": { dx: 484, dy: 248 },
+  "鯉魚潭水庫": { dx: -429, dy: 3 },
   "南化水庫": { dx: 319, dy: -128 },
   "仁義潭水庫": { dx: 224, dy: 258 },
 };
-
 // 與 react-simple-maps 的 geoMercator 參數一致
 const PROJ_CENTER_LNG = 121;
 const PROJ_CENTER_LAT = 23.8;
 const PROJ_SCALE = 8000;
-const MAP_WIDTH = 850;
-const MAP_HEIGHT = 1200;
 
 const readField = (obj, camelKey, pascalKey) => obj?.[camelKey] ?? obj?.[pascalKey];
 const asArray = (value) => (Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : []);
 
-function latlngToMapPixel(lng, lat) {
-  const projection = geoMercator()
-    .center([PROJ_CENTER_LNG, PROJ_CENTER_LAT])
-    .scale(PROJ_SCALE)
-    .translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
+function normalizeReservoir(item, realTimeInfos, stations) {
+  const rawStationNo = readField(item, "stationNo", "StationNo");
+  const name = readField(item, "reservoirName", "ReservoirName");
+  const station = stations?.find((s) => {
+    const stationNo = readField(s, "stationNo", "StationNo");
+    const stationName = readField(s, "stationName", "StationName");
+    return (rawStationNo && stationNo === rawStationNo) || stationName === name;
+  });
+  const stationNo = rawStationNo ?? readField(station, "stationNo", "StationNo");
+  const longitude = readField(item, "longitude", "Longitude") ?? readField(station, "longitude", "Longitude");
+  const latitude = readField(item, "latitude", "Latitude") ?? readField(station, "latitude", "Latitude");
 
-  const [xMap, yMap] = projection([lng, lat]);
+  if (!name || longitude == null || latitude == null) {
+    return null;
+  }
+
+  const realTime = stationNo
+    ? realTimeInfos?.find((r) => readField(r, "stationNo", "StationNo") === stationNo)
+    : realTimeInfos?.find((r) => readField(r, "stationName", "StationName") === name);
+  const storage = readField(item, "storage", "Storage") ?? readField(station, "storage", "Storage");
+  const effectiveStorage = readField(realTime, "effectiveStorage", "EffectiveStorage");
+  const percentageOfStorage = readField(realTime, "percentageOfStorage", "PercentageOfStorage");
+  const volume = effectiveStorage != null
+    ? Math.round(Number(effectiveStorage)).toLocaleString()
+    : storage != null
+      ? Math.round(Number(storage)).toLocaleString()
+      : "-";
+  const percent = percentageOfStorage != null
+    ? Number(Number(percentageOfStorage).toFixed(2))
+    : 0;
 
   return {
-    x: xMap,
-    y: yMap,
-  };
-}
-
-function mapToScreenPosition(mapX, mapY, containerW, containerH) {
-  const scale = Math.min(containerW / MAP_WIDTH, containerH / MAP_HEIGHT);
-  const offsetX = (containerW - MAP_WIDTH * scale) / 2;
-  const offsetY = (containerH - MAP_HEIGHT * scale) / 2;
-
-  return {
-    x: offsetX + mapX * scale,
-    y: offsetY + mapY * scale,
+    id: stationNo || name,
+    stationNo,
+    name,
+    coords: [Number(longitude), Number(latitude)],
+    volume,
+    percent,
   };
 }
 
@@ -79,6 +93,17 @@ const ReservoirDashboard = () => {
 
   const { data: displayList, isLoading: isDisplayListLoading } = useReservoirDisplayList();
   const { data: realTimeInfos, isLoading: isRealTimeLoading } = useReservoirRealTimeInfo();
+  const { data: stations, isLoading: isStationLoading } = useReservoirStation();
+  const mapWidth = Math.max(1, containerSize.w);
+  const mapHeight = Math.max(1, containerSize.h);
+  const mapProjection = useMemo(
+    () =>
+      geoMercator()
+        .center([PROJ_CENTER_LNG, PROJ_CENTER_LAT])
+        .scale(PROJ_SCALE)
+        .translate([mapWidth / 2, mapHeight / 2]),
+    [mapWidth, mapHeight]
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -150,59 +175,29 @@ const ReservoirDashboard = () => {
       return [];
     }
 
-    return list
-      .map((item) => {
-        const stationNo = readField(item, "stationNo", "StationNo");
-        const name = readField(item, "reservoirName", "ReservoirName");
-        const longitude = readField(item, "longitude", "Longitude");
-        const latitude = readField(item, "latitude", "Latitude");
+    return list.map((item) => normalizeReservoir(item, realTimeInfos, stations)).filter(Boolean);
+  }, [displayList, realTimeInfos, stations]);
 
-        if (!name || longitude == null || latitude == null) {
-          return null;
-        }
-
-        const realTime = stationNo
-          ? realTimeInfos?.find((r) => r.stationNo === stationNo)
-          : realTimeInfos?.find((r) => r.stationName === name);
-        const storage = readField(item, "storage", "Storage");
-        const volume = realTime?.effectiveStorage != null
-          ? Math.round(realTime.effectiveStorage).toLocaleString()
-          : storage != null
-            ? Math.round(Number(storage)).toLocaleString()
-            : "-";
-        const percent = realTime?.percentageOfStorage != null
-          ? Number(realTime.percentageOfStorage.toFixed(2))
-          : 0;
-
-        return {
-          id: stationNo || name,
-          stationNo,
-          name,
-          coords: [Number(longitude), Number(latitude)],
-          volume,
-          percent,
-        };
-      })
-      .filter(Boolean);
-  }, [displayList, realTimeInfos]);
+  const reservoirById = useMemo(
+    () => Object.fromEntries(reservoirs.map((res) => [res.id, res])),
+    [reservoirs]
+  );
 
   const cardPositions = useMemo(() => {
-    const { w, h } = containerSize;
     return reservoirs.map((res) => {
-      const mapAnchor = latlngToMapPixel(res.coords[0], res.coords[1]);
-      const anchor = mapToScreenPosition(mapAnchor.x, mapAnchor.y, w, h);
+      const [anchorX, anchorY] = mapProjection(res.coords);
       return {
         id: res.id,
         name: res.name,
         stationNo: res.stationNo,
         coords: res.coords,
-        x: anchor.x,
-        y: anchor.y,
-        anchorX: anchor.x,
-        anchorY: anchor.y,
+        x: anchorX,
+        y: anchorY,
+        anchorX,
+        anchorY,
       };
     });
-  }, [reservoirs, containerSize]);
+  }, [reservoirs, mapProjection]);
 
   const updateTime = useMemo(() => {
     if (!realTimeInfos || realTimeInfos.length === 0) return "";
@@ -227,7 +222,7 @@ const ReservoirDashboard = () => {
     return `${twYear}-${month}-${day} ${hours}時`;
   }, [realTimeInfos]);
 
-  if (isDisplayListLoading || isRealTimeLoading) {
+  if (isDisplayListLoading || isRealTimeLoading || isStationLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
         <Spin size="large" tip="資料載入中..." />
@@ -292,10 +287,9 @@ const ReservoirDashboard = () => {
       </div>
 
       <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{ center: [121, 23.8], scale: 8000 }}
-        width={MAP_WIDTH}
-        height={MAP_HEIGHT}
+        projection={mapProjection}
+        width={mapWidth}
+        height={mapHeight}
         style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
       >
         <Geographies geography={GEO_URL} parseNodeName="counties">
@@ -329,7 +323,13 @@ const ReservoirDashboard = () => {
         ))}
       </ComposableMap>
 
-      <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 6, pointerEvents: "none" }}>
+      <svg
+        width={mapWidth}
+        height={mapHeight}
+        viewBox={`0 0 ${mapWidth} ${mapHeight}`}
+        preserveAspectRatio="none"
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 6, pointerEvents: "none" }}
+      >
         {cardPositions.map((pos) => {
           const cOff = dragOffsets[pos.name] ?? { dx: 0, dy: 0 };
           const markerX = pos.anchorX;
@@ -356,7 +356,7 @@ const ReservoirDashboard = () => {
       </svg>
 
       {cardPositions.map((pos) => {
-        const res = reservoirs.find((r) => r.id === pos.id);
+        const res = reservoirById[pos.id];
         if (!res) return null;
 
         const off = dragOffsets[pos.name] ?? { dx: 0, dy: 0 };

@@ -5,7 +5,7 @@ import WaterWarningDashboard from "./WaterWarningDashboard";
 import ReservoirFactoryMappingForm from "./components/ReservoirFactoryMappingForm";
 
 const WaterReservoirDashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("reservoir");
 
   return (
     <div className="water-dashboard-page" style={{ padding: "20px" }}>

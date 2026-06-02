@@ -11,22 +11,39 @@ const SEVERITY_MAP = {
   Extreme: { colorClass: "red", status: "分區供水或定點供水" },
 };
 
+const parseAlertDate = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? null : date;
+};
+
+const formatTwDate = (value) => {
+  const date = parseAlertDate(value);
+  if (!date) return value || "---";
+
+  const twYear = date.getFullYear() - 1911;
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${twYear}年${month}月${day}日`;
+};
+
 const WaterWarningDashboard = () => {
   const { data: alert, isLoading } = useDroughtAlert();
-  console.log("alert", alert);
 
-  const publishDate = useMemo(() => {
-    if (!alert?.info?.effective) return "---";
-    const date = new Date(alert.info.effective);
-    if (isNaN(date.getTime())) return alert.info.effective;
-    const twYear = date.getFullYear() - 1911;
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${twYear}年${month}月${day}日`;
-  }, [alert]);
+  const effectiveDate = alert?.info?.effective;
+  const expiresDate = alert?.info?.expires;
+  const hasAlert = !!alert?.info;
+  const isExpired = useMemo(() => {
+    const date = parseAlertDate(expiresDate);
+    return date ? date.getTime() <= Date.now() : false;
+  }, [expiresDate]);
+
+  const publishDate = useMemo(() => formatTwDate(effectiveDate), [effectiveDate]);
+  const expireDate = useMemo(() => formatTwDate(expiresDate), [expiresDate]);
+  const expiryStatusText = !hasAlert ? "尚無水情資訊" : isExpired ? "水情資訊已過期" : "水情資訊有效";
 
   const warnings = useMemo(() => {
-    if (!alert?.info) return [];
+    if (!alert?.info || isExpired) return [];
 
     const { severity, area } = alert.info;
     const severityInfo = SEVERITY_MAP[severity] || SEVERITY_MAP.Minor;
@@ -36,7 +53,7 @@ const WaterWarningDashboard = () => {
       region: a.areaDesc, // 例如「新竹縣」、「台中市」
       ...severityInfo,
     }));
-  }, [alert]);
+  }, [alert, isExpired]);
 
   if (isLoading) {
     return (
@@ -79,9 +96,16 @@ const WaterWarningDashboard = () => {
           <div className="date-value">{publishDate}</div>
         </div>
 
+        <div className={`expiry-panel ${isExpired ? "expired" : "active"}`}>
+          <span className="expiry-status">{expiryStatusText}</span>
+          <span className="expiry-date">有效期限：{expireDate}</span>
+        </div>
+
         <div className="status-list-panel">
           {warnings.length === 0 ? (
-            <div style={{ color: "#555", textAlign: "center", padding: "20px 0" }}>目前無水情警戒</div>
+            <div style={{ color: "#555", textAlign: "center", padding: "20px 0" }}>
+              {isExpired ? "水情資訊已過期，未顯示舊警戒" : "目前無水情警戒"}
+            </div>
           ) : (
             warnings.map((w, idx) => (
               <div key={idx} className="status-item">
