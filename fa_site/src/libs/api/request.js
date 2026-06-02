@@ -24,7 +24,12 @@ apiClient.interceptors.request.use(
 
 // 2. Response interceptor — 自動 unwrap data，集中處理錯誤
 apiClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    if (response.config?.rawResponse) {
+      return response;
+    }
+    return response.data;
+  },
   (error) => {
     const status = error.response?.status;
     const message = error.response?.data?.message || error.message;

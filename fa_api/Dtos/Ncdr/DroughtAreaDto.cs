@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace fa_api.Dtos.Ncdr
@@ -23,7 +24,7 @@ namespace fa_api.Dtos.Ncdr
         /// - "Minor"    藍燈：水情提醒
         /// - "Moderate" 黃燈：減壓供水
         /// - "Severe"   橙燈：減量供水
-        /// - "Extreme"  紅燈：分區供水及限水點用水
+        /// - "Extreme"  紅燈：分區供水或定點供水
         /// </summary>
         public string Severity { get; set; }
 
@@ -40,12 +41,12 @@ namespace fa_api.Dtos.Ncdr
         /// <summary>
         /// 警示生效時間
         /// </summary>
-        public string Effective { get; set; }
+        public DateTime Effective { get; set; }
 
         /// <summary>
         /// 警示過期時間
         /// </summary>
-        public string Expires { get; set; }
+        public DateTime Expires { get; set; }
 
         /// <summary>
         /// 受影響地區列表

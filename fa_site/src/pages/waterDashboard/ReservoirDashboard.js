@@ -1,28 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import "./WaterDashboard.css";
 import ReservoirCard from "./components/ReservoirCard";
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-import useReservoirStation from "libs/hooks/api/wrSituation/WraGov/useReservoirStation";
+import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
+import { geoMercator } from "d3-geo";
+import useReservoirDisplayList from "libs/hooks/api/wrSituation/WraGov/useReservoirDisplayList";
 import useReservoirRealTimeInfo from "libs/hooks/api/wrSituation/WraGov/useReservoirRealTimeInfo";
 import { Spin, Button, Popconfirm, message } from "antd";
 
-const GEO_URL = "https://cdn.jsdelivr.net/npm/taiwan-atlas/counties-10t.json";
-
-// 水庫實際經緯度
-const reservoirMapData = [
-  { name: "寶山水庫", coords: [121.04, 24.78] },
-  { name: "寶山第二水庫", coords: [121.07, 24.74] },
-  { name: "永和山水庫", coords: [120.96, 24.62] },
-  { name: "石門水庫", coords: [121.24, 24.88] },
-  { name: "翡翠水庫", coords: [121.6, 24.93] },
-  { name: "鯉魚潭水庫", coords: [120.86, 24.3] },
-  { name: "德基水庫", coords: [121.12, 24.22] },
-  { name: "南化水庫", coords: [120.45, 23.12] },
-  { name: "蘭潭水庫", coords: [120.53, 23.46] },
-  { name: "仁義潭水庫", coords: [120.51, 23.44] },
-  { name: "曾文水庫", coords: [120.47, 23.26] },
-  { name: "烏山頭水庫", coords: [120.33, 23.12] },
-];
+const GEO_URL = "/counties-10t.json";
 
 // 卡片預設位移（可拖曳後儲存）
 const DEFAULT_CARD_OFFSETS = {
@@ -40,37 +25,38 @@ const DEFAULT_CARD_OFFSETS = {
   "仁義潭水庫": { dx: 224, dy: 258 },
 };
 
-// 標記點預設位移（可拖曳後儲存）
-const DEFAULT_MARKER_OFFSETS = {
-  "仁義潭水庫": { dx: 88, dy: 80 },
-  "蘭潭水庫": { dx: 98, dy: -22 },
-  "永和山水庫": { dx: -64, dy: 127 },
-  "曾文水庫": { dx: 37, dy: -97 },
-  "南化水庫": { dx: 32, dy: 31 },
-  "烏山頭水庫": { dx: 57, dy: -33 },
-  "寶山第二水庫": { dx: -44, dy: 47 },
-  "石門水庫": { dx: -23, dy: 35 },
-  "翡翠水庫": { dx: -112, dy: 68 },
-};
-
 // 與 react-simple-maps 的 geoMercator 參數一致
-const SVG_W = 850;
-const SVG_H = 1200;
-const PROJ_CENTER_LNG = 120.8;
-const PROJ_CENTER_LAT = 24;
+const PROJ_CENTER_LNG = 121;
+const PROJ_CENTER_LAT = 23.8;
 const PROJ_SCALE = 8000;
+const MAP_WIDTH = 850;
+const MAP_HEIGHT = 1200;
 
-function latlngToPixel(lng, lat, containerW, containerH) {
-  const toRad = (d) => (d * Math.PI) / 180;
-  const xSvg = (lng - PROJ_CENTER_LNG) * PROJ_SCALE * (Math.PI / 180) + SVG_W / 2;
-  const ySvg = -(
-    Math.log(Math.tan(Math.PI / 4 + toRad(lat) / 2))
-    - Math.log(Math.tan(Math.PI / 4 + toRad(PROJ_CENTER_LAT) / 2))
-  ) * PROJ_SCALE + SVG_H / 2;
+const readField = (obj, camelKey, pascalKey) => obj?.[camelKey] ?? obj?.[pascalKey];
+const asArray = (value) => (Array.isArray(value) ? value : Array.isArray(value?.data) ? value.data : []);
+
+function latlngToMapPixel(lng, lat) {
+  const projection = geoMercator()
+    .center([PROJ_CENTER_LNG, PROJ_CENTER_LAT])
+    .scale(PROJ_SCALE)
+    .translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
+
+  const [xMap, yMap] = projection([lng, lat]);
 
   return {
-    x: (xSvg / SVG_W) * containerW,
-    y: (ySvg / SVG_H) * containerH,
+    x: xMap,
+    y: yMap,
+  };
+}
+
+function mapToScreenPosition(mapX, mapY, containerW, containerH) {
+  const scale = Math.min(containerW / MAP_WIDTH, containerH / MAP_HEIGHT);
+  const offsetX = (containerW - MAP_WIDTH * scale) / 2;
+  const offsetY = (containerH - MAP_HEIGHT * scale) / 2;
+
+  return {
+    x: offsetX + mapX * scale,
+    y: offsetY + mapY * scale,
   };
 }
 
@@ -91,18 +77,7 @@ const ReservoirDashboard = () => {
 
   const draggingRef = useRef(null);
 
-  const [markerOffsets, setMarkerOffsets] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("reservoir-marker-offsets"));
-      return saved ?? DEFAULT_MARKER_OFFSETS;
-    } catch {
-      return DEFAULT_MARKER_OFFSETS;
-    }
-  });
-
-  const markerDraggingRef = useRef(null);
-
-  const { data: stations, isLoading: isStationsLoading } = useReservoirStation();
+  const { data: displayList, isLoading: isDisplayListLoading } = useReservoirDisplayList();
   const { data: realTimeInfos, isLoading: isRealTimeLoading } = useReservoirRealTimeInfo();
 
   useEffect(() => {
@@ -153,92 +128,74 @@ const ReservoirDashboard = () => {
     window.addEventListener("mouseup", onUp);
   }, [dragOffsets]);
 
-  const handleMarkerMouseDown = useCallback((e, name) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const cur = markerOffsets[name] ?? { dx: 0, dy: 0 };
-    markerDraggingRef.current = {
-      name,
-      startX: e.clientX,
-      startY: e.clientY,
-      baseDx: cur.dx,
-      baseDy: cur.dy,
-    };
-
-    const onMove = (ev) => {
-      const d = markerDraggingRef.current;
-      if (!d) return;
-      setMarkerOffsets((prev) => ({
-        ...prev,
-        [d.name]: {
-          dx: d.baseDx + ev.clientX - d.startX,
-          dy: d.baseDy + ev.clientY - d.startY,
-        },
-      }));
-    };
-
-    const onUp = () => {
-      markerDraggingRef.current = null;
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      setMarkerOffsets((prev) => {
-        localStorage.setItem("reservoir-marker-offsets", JSON.stringify(prev));
-        return prev;
-      });
-    };
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }, [markerOffsets]);
-
   const handleReset = useCallback(() => {
     localStorage.removeItem("reservoir-card-offsets");
-    localStorage.removeItem("reservoir-marker-offsets");
     setDragOffsets(DEFAULT_CARD_OFFSETS);
-    setMarkerOffsets(DEFAULT_MARKER_OFFSETS);
   }, []);
 
   const handleExport = useCallback(() => {
     const cardLines = Object.entries(dragOffsets)
       .map(([name, { dx, dy }]) => `  '${name}': { dx: ${Math.round(dx)}, dy: ${Math.round(dy)} },`)
       .join("\n");
-    const markerLines = Object.entries(markerOffsets)
-      .map(([name, { dx, dy }]) => `  '${name}': { dx: ${Math.round(dx)}, dy: ${Math.round(dy)} },`)
-      .join("\n");
 
-    const text = `const DEFAULT_CARD_OFFSETS = {\n${cardLines}\n};\n\nconst DEFAULT_MARKER_OFFSETS = {\n${markerLines}\n};`;
+    const text = `const DEFAULT_CARD_OFFSETS = {\n${cardLines}\n};`;
     navigator.clipboard.writeText(text).then(() => {
-      message.success("已複製卡片與標記點位置到剪貼簿");
+      message.success("已複製卡片位置到剪貼簿");
     });
-  }, [dragOffsets, markerOffsets]);
+  }, [dragOffsets]);
 
   const reservoirs = useMemo(() => {
-    if (!stations || !realTimeInfos) {
-      return reservoirMapData.map((d) => ({ ...d, volume: "-", percent: 0 }));
+    const list = asArray(displayList);
+    if (list.length === 0) {
+      return [];
     }
 
-    return reservoirMapData.map((mapData) => {
-      const station = stations.find((s) => s.stationName === mapData.name);
-      if (!station) return { ...mapData, volume: "-", percent: 0 };
+    return list
+      .map((item) => {
+        const stationNo = readField(item, "stationNo", "StationNo");
+        const name = readField(item, "reservoirName", "ReservoirName");
+        const longitude = readField(item, "longitude", "Longitude");
+        const latitude = readField(item, "latitude", "Latitude");
 
-      const realTime = realTimeInfos.find((r) => r.stationNo === station.stationNo);
-      const volume = realTime?.effectiveStorage != null
-        ? Math.round(realTime.effectiveStorage).toLocaleString()
-        : "-";
-      const percent = realTime?.percentageOfStorage != null
-        ? Number(realTime.percentageOfStorage.toFixed(2))
-        : 0;
+        if (!name || longitude == null || latitude == null) {
+          return null;
+        }
 
-      return { ...mapData, volume, percent };
-    });
-  }, [stations, realTimeInfos]);
+        const realTime = stationNo
+          ? realTimeInfos?.find((r) => r.stationNo === stationNo)
+          : realTimeInfos?.find((r) => r.stationName === name);
+        const storage = readField(item, "storage", "Storage");
+        const volume = realTime?.effectiveStorage != null
+          ? Math.round(realTime.effectiveStorage).toLocaleString()
+          : storage != null
+            ? Math.round(Number(storage)).toLocaleString()
+            : "-";
+        const percent = realTime?.percentageOfStorage != null
+          ? Number(realTime.percentageOfStorage.toFixed(2))
+          : 0;
+
+        return {
+          id: stationNo || name,
+          stationNo,
+          name,
+          coords: [Number(longitude), Number(latitude)],
+          volume,
+          percent,
+        };
+      })
+      .filter(Boolean);
+  }, [displayList, realTimeInfos]);
 
   const cardPositions = useMemo(() => {
     const { w, h } = containerSize;
     return reservoirs.map((res) => {
-      const anchor = latlngToPixel(res.coords[0], res.coords[1], w, h);
+      const mapAnchor = latlngToMapPixel(res.coords[0], res.coords[1]);
+      const anchor = mapToScreenPosition(mapAnchor.x, mapAnchor.y, w, h);
       return {
+        id: res.id,
         name: res.name,
+        stationNo: res.stationNo,
+        coords: res.coords,
         x: anchor.x,
         y: anchor.y,
         anchorX: anchor.x,
@@ -270,7 +227,7 @@ const ReservoirDashboard = () => {
     return `${twYear}-${month}-${day} ${hours}時`;
   }, [realTimeInfos]);
 
-  if (isStationsLoading || isRealTimeLoading) {
+  if (isDisplayListLoading || isRealTimeLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
         <Spin size="large" tip="資料載入中..." />
@@ -337,8 +294,8 @@ const ReservoirDashboard = () => {
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ center: [121, 23.8], scale: 8000 }}
-        width={850}
-        height={1200}
+        width={MAP_WIDTH}
+        height={MAP_HEIGHT}
         style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
       >
         <Geographies geography={GEO_URL} parseNodeName="counties">
@@ -358,17 +315,27 @@ const ReservoirDashboard = () => {
               />
             ))}
         </Geographies>
+
+        {reservoirs.map((res) => (
+          <Marker key={`map-marker-${res.id}`} coordinates={res.coords}>
+            <circle
+              r={res.name === hovered ? 9 : 6}
+              fill={res.name === hovered ? "#ffc107" : "#F5A623"}
+              stroke="#fff"
+              strokeWidth={2}
+              style={{ transition: "r 0.2s, fill 0.2s" }}
+            />
+          </Marker>
+        ))}
       </ComposableMap>
 
       <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: 6, pointerEvents: "none" }}>
         {cardPositions.map((pos) => {
-          const mOff = markerOffsets[pos.name] ?? { dx: 0, dy: 0 };
           const cOff = dragOffsets[pos.name] ?? { dx: 0, dy: 0 };
-          const markerX = pos.anchorX + mOff.dx;
-          const markerY = pos.anchorY + mOff.dy;
+          const markerX = pos.anchorX;
+          const markerY = pos.anchorY;
           const cardX = pos.x + cOff.dx;
           const cardY = pos.y + cOff.dy;
-          const isDraggingMarker = markerDraggingRef.current?.name === pos.name;
 
           return (
             <g key={pos.name}>
@@ -381,16 +348,7 @@ const ReservoirDashboard = () => {
                 strokeWidth={pos.name === hovered ? 2.5 : 1.2}
                 strokeDasharray={pos.name === hovered ? "0" : "4 3"}
                 opacity={pos.name === hovered ? 1 : 0.55}
-                style={{ transition: isDraggingMarker ? "none" : "all 0.3s" }}
-              />
-              <circle
-                cx={markerX}
-                cy={markerY}
-                r={pos.name === hovered ? 9 : 6}
-                fill={pos.name === hovered ? "#ffc107" : "#F5A623"}
-                stroke="#fff"
-                strokeWidth={2}
-                style={{ transition: isDraggingMarker ? "none" : "r 0.2s, fill 0.2s" }}
+                style={{ transition: "all 0.3s" }}
               />
             </g>
           );
@@ -398,34 +356,7 @@ const ReservoirDashboard = () => {
       </svg>
 
       {cardPositions.map((pos) => {
-        const mOff = markerOffsets[pos.name] ?? { dx: 0, dy: 0 };
-        const markerX = pos.anchorX + mOff.dx;
-        const markerY = pos.anchorY + mOff.dy;
-        const isDraggingMarker = markerDraggingRef.current?.name === pos.name;
-        const size = pos.name === hovered ? 18 : 14;
-
-        return (
-          <div
-            key={`marker-hit-${pos.name}`}
-            onMouseEnter={() => setHovered(pos.name)}
-            onMouseLeave={() => setHovered(null)}
-            onMouseDown={(e) => handleMarkerMouseDown(e, pos.name)}
-            style={{
-              position: "absolute",
-              left: markerX - size / 2,
-              top: markerY - size / 2,
-              width: size,
-              height: size,
-              borderRadius: "50%",
-              cursor: isDraggingMarker ? "grabbing" : "grab",
-              zIndex: 8,
-            }}
-          />
-        );
-      })}
-
-      {cardPositions.map((pos) => {
-        const res = reservoirs.find((r) => r.name === pos.name);
+        const res = reservoirs.find((r) => r.id === pos.id);
         if (!res) return null;
 
         const off = dragOffsets[pos.name] ?? { dx: 0, dy: 0 };

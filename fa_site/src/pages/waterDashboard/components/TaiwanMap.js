@@ -2,7 +2,7 @@
 import PropTypes from "prop-types";
 import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
 
-const GEO_URL = "./counties-10t.json";
+const GEO_URL = "/counties-10t.json";
 
 const COLOR_MAP = {
   green: { default: "#4CAF50", hover: "#388E3C" },

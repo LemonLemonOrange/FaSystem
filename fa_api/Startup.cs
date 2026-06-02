@@ -1,3 +1,4 @@
+using fa_api.Schedule;
 using fa_api.ServiceExtensions;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -61,8 +62,12 @@ namespace fa_api
                 c.EnableFilter();
             });
 
-            // ========== Hangfire Dashboard（/hangfire）==========
+            // ========== Hangfire Dashboard ==========
             app.UseHangfireDashboard("/hangfire");
+
+            // ========== 註冊所有排程任務 ==========
+            var registrar = app.ApplicationServices.GetRequiredService<ScheduleRegistrar>();
+            registrar.RegisterAllJobs();
 
             // 開發環境不使用 HTTPS 重定向
             if (!env.IsDevelopment())

@@ -20,8 +20,8 @@ namespace fa_api.Data
         {
         }
 
-        public virtual DbSet<FaWrSignalLevel> FaWrSignalLevel { get; set; }
-        public virtual DbSet<FaWrSignalSnapshot> FaWrSignalSnapshot { get; set; }
+        public virtual DbSet<FaWrDroughtAlert> FaWrDroughtAlert { get; set; }
+        public virtual DbSet<FaWrReservoirAlert> FaWrReservoirAlert { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -33,32 +33,32 @@ namespace fa_api.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<FaWrSignalLevel>(entity =>
+            modelBuilder.Entity<FaWrDroughtAlert>(entity =>
             {
-                entity.HasIndex(e => e.AlertIdentifier);
+                entity.HasIndex(e => e.AreaName)
+                    .HasName("UQ_FA_WR_DroughtAlert_AreaName")
+                    .IsUnique();
 
-                entity.HasIndex(e => e.County);
+                entity.Property(e => e.CreateTime).HasDefaultValueSql("(sysdatetime())");
 
-                entity.HasIndex(e => e.EffectiveTime);
+                entity.Property(e => e.CreateUserNo).IsUnicode(false);
 
-                entity.HasIndex(e => e.RecordTime);
+                entity.Property(e => e.Severity).IsUnicode(false);
 
-                entity.HasIndex(e => e.SignalLevel);
-
-                entity.Property(e => e.IsActive).HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.RecordTime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.UpdateUserNo).IsUnicode(false);
             });
 
-            modelBuilder.Entity<FaWrSignalSnapshot>(entity =>
+            modelBuilder.Entity<FaWrReservoirAlert>(entity =>
             {
-                entity.HasIndex(e => e.AreaName);
+                entity.HasIndex(e => e.ReservoirName)
+                    .HasName("UQ_FA_WR_ReservoirAlert_ReservoirName")
+                    .IsUnique();
 
-                entity.HasIndex(e => e.BatchId);
+                entity.Property(e => e.CreateTime).HasDefaultValueSql("(sysdatetime())");
 
-                entity.HasIndex(e => e.RecordTime);
+                entity.Property(e => e.CreateUserNo).IsUnicode(false);
 
-                entity.Property(e => e.RecordTime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.UpdateUserNo).IsUnicode(false);
             });
 
             OnModelCreatingPartial(modelBuilder);

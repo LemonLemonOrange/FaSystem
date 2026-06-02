@@ -14,12 +14,6 @@ const WaterReservoirDashboard = () => {
         {/* Header Tabs */}
         <div className="dashboard-header-tabs">
           <div
-            className={`header-tab ${activeTab === "overview" ? "active" : ""}`}
-            onClick={() => setActiveTab("overview")}
-          >
-            總覽
-          </div>
-          <div
             className={`header-tab ${activeTab === "reservoir" ? "active" : ""}`}
             onClick={() => setActiveTab("reservoir")}
           >

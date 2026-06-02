@@ -150,8 +150,8 @@ namespace fa_api.Services.Ncdr
                         Severity = info?.Element(capNs + "severity")?.Value,
                         Headline = info?.Element(capNs + "headline")?.Value,
                         Description = info?.Element(capNs + "description")?.Value,
-                        Effective = info?.Element(capNs + "effective")?.Value,
-                        Expires = info?.Element(capNs + "expires")?.Value,
+                        Effective = DateTime.Parse(info?.Element(capNs + "effective")?.Value),
+                        Expires = DateTime.Parse(info?.Element(capNs + "expires")?.Value),
                         Area = areas
                     }
                 };

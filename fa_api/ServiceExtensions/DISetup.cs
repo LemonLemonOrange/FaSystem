@@ -1,13 +1,17 @@
 using System;
 using System.IO;
 using System.Reflection;
+using fa_api.Data;
 using fa_api.Schedule;
+using fa_api.Schedule.Jobs;
 using fa_api.Services.Mail;
 using fa_api.Services.Ncdr;
 using fa_api.Services.WraGov;
+using fa_api.Services.WrRecorder;
 using fa_api.Services.Yolo;
 using Hangfire;
 using Hangfire.MemoryStorage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
@@ -38,10 +42,15 @@ namespace fa_api.ServiceExtensions
             services.AddHttpClient();
             services.AddMemoryCache();
 
+            // ========== Database ==========
+            services.AddDbContext<FaDbContext>(options =>
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
+            );
+
             // ========== Mail 服務 ==========
             services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
+            services.Configure<ReportRecipientsSettings>(configuration.GetSection("ReportRecipients"));
             services.AddScoped<IMailService, MailService>();
-            services.AddScoped<MailSchedule>();
 
             // ========== Hangfire ==========
             services.AddHangfire(config =>
@@ -53,6 +62,13 @@ namespace fa_api.ServiceExtensions
             );
             services.AddHangfireServer();
 
+            // ========== 排程任務 Jobs ==========
+            services.AddScoped<DailyWaterReportJob>();
+            services.AddScoped<MorningAlertSummaryJob>();
+            services.AddScoped<WeeklyStatisticsJob>();
+            services.AddScoped<ReservoirCheckJob>();
+            services.AddSingleton<ScheduleRegistrar>(); // ✅ 改為 Singleton
+
             // ========== NCDR 服務 ==========
             services.AddScoped<INcdrDroughtService, NcdrDroughtService>();
 
@@ -62,6 +78,9 @@ namespace fa_api.ServiceExtensions
             // ========== YOLO 服務 ==========
             services.Configure<YoloSettings>(configuration.GetSection("YoloSettings"));
             services.AddScoped<IYoloService, YoloService>();
+
+            // ========== 水庫服務 ==========
+            services.AddScoped<IWrRecorderService, WrRecorderService>();
 
             return services;
         }
@@ -103,7 +122,7 @@ namespace fa_api.ServiceExtensions
                     if (controllerActionDescriptor != null)
                         return new[] { controllerActionDescriptor.ControllerName };
 
-                    throw new System.InvalidOperationException(
+                    throw new InvalidOperationException(
                         "Unable to determine tag for endpoint."
                     );
                 });

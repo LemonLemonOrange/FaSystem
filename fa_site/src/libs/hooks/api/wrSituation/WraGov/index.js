@@ -1,5 +1,6 @@
 // Reservoir APIs
 export { default as useReservoirStation } from "./useReservoirStation";
+export { default as useReservoirDisplayList } from "./useReservoirDisplayList";
 export { default as useReservoirRealTimeInfo } from "./useReservoirRealTimeInfo";
 export { default as useReservoirDaily } from "./useReservoirDaily";
 export { default as useReservoirWarning } from "./useReservoirWarning";

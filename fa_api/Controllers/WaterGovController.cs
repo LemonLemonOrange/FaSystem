@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using fa_api.Dtos.WraGov;
 using fa_api.Services.WraGov;
+using fa_api.Services.WrRecorder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ namespace fa_api.Controllers
         private readonly ILogger<WaterGovController> _logger;
         private readonly IWraGovService _wraGovService;
         private readonly IMemoryCache _cache;
+        private readonly IWrRecorderService _wrRecorderService;
 
         // Cache keys
         private const string CityCacheKey = "wraCity";
@@ -53,11 +55,13 @@ namespace fa_api.Controllers
         public WaterGovController(
             ILogger<WaterGovController> logger,
             IWraGovService wraGovService,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IWrRecorderService wrRecorderService)
         {
             _logger = logger;
             _wraGovService = wraGovService;
             _cache = cache;
+            _wrRecorderService = wrRecorderService;
         }
 
         #region Basic
@@ -589,5 +593,33 @@ namespace fa_api.Controllers
         }
 
         #endregion
+
+        /// <summary>
+        /// 取得前端顯示用的水庫清單（只顯示有設定門檻的水庫）
+        /// </summary>
+        /// <remarks>
+        /// 此 API 會從 FA_WR_ReservoirAlert 表讀取已設定警示門檻的水庫清單，
+        /// 並結合水利署 API 提供完整的地理位置、流域、蓄水量等資訊。
+        /// </remarks>
+        [HttpGet("reservoir/display-list")]
+        public async Task<ActionResult<List<ReservoirDisplayDto>>> GetReservoirDisplayList()
+        {
+            try
+            {
+                var data = await _wrRecorderService.GetDisplayReservoirsAsync();
+                
+                return Ok(new
+                {
+                    count = data?.Count ?? 0,
+                    data = data ?? new List<ReservoirDisplayDto>(),
+                    timestamp = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "取得水庫顯示清單發生錯誤");
+                return StatusCode(500, new { message = "取得水庫顯示清單失敗", error = ex.Message });
+            }
+        }
     }
 }

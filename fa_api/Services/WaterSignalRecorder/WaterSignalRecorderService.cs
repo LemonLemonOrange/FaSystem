@@ -86,7 +86,7 @@ namespace fa_api.Services.WaterSignalRecorder
             // 3. 批次寫入資料庫
             try
             {
-                _dbContext.FaWrSignalSnapshot.AddRange(snapshots);
+                //_dbContext.FaWrSignalSnapshot.AddRange(snapshots);
                 await _dbContext.SaveChangesAsync();
             }
             catch (Exception ex)
