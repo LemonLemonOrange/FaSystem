@@ -78,7 +78,8 @@ const ReservoirDashboard = () => {
   const [hovered, setHovered] = useState(null);
   const [layoutMode, setLayoutMode] = useState("auto");
   const containerRef = useRef(null);
-  const [containerSize, setContainerSize] = useState({ w: 900, h: 675 });
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
+  const [hasMeasuredContainer, setHasMeasuredContainer] = useState(false);
 
   const [dragOffsets, setDragOffsets] = useState(() => {
     try {
@@ -94,6 +95,7 @@ const ReservoirDashboard = () => {
   const { data: displayList, isLoading: isDisplayListLoading } = useReservoirDisplayList();
   const { data: realTimeInfos, isLoading: isRealTimeLoading } = useReservoirRealTimeInfo();
   const { data: stations, isLoading: isStationLoading } = useReservoirStation();
+  const isDataLoading = isDisplayListLoading || isRealTimeLoading || isStationLoading;
   const mapWidth = Math.max(1, containerSize.w);
   const mapHeight = Math.max(1, containerSize.h);
   const mapProjection = useMemo(
@@ -106,15 +108,32 @@ const ReservoirDashboard = () => {
   );
 
   useEffect(() => {
+    if (isDataLoading) return undefined;
     if (!containerRef.current) return;
+    let frameId;
+    const updateSize = (rect) => {
+      if (!rect.width || !rect.height) return;
+      setContainerSize({ w: rect.width, h: rect.height });
+      setHasMeasuredContainer(true);
+    };
+
+    frameId = window.requestAnimationFrame(() => {
+      if (containerRef.current) {
+        updateSize(containerRef.current.getBoundingClientRect());
+      }
+    });
+
     const ro = new ResizeObserver((entries) => {
       for (const e of entries) {
-        setContainerSize({ w: e.contentRect.width, h: e.contentRect.height });
+        updateSize(e.contentRect);
       }
     });
     ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      ro.disconnect();
+    };
+  }, [isDataLoading]);
 
   const handleCardMouseDown = useCallback((e, name) => {
     e.preventDefault();
@@ -222,9 +241,17 @@ const ReservoirDashboard = () => {
     return `${twYear}-${month}-${day} ${hours}時`;
   }, [realTimeInfos]);
 
-  if (isDisplayListLoading || isRealTimeLoading || isStationLoading) {
+  if (isDataLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+        <Spin size="large" tip="資料載入中..." />
+      </div>
+    );
+  }
+
+  if (!hasMeasuredContainer) {
+    return (
+      <div ref={containerRef} style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Spin size="large" tip="資料載入中..." />
       </div>
     );
