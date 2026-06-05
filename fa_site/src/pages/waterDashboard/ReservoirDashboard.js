@@ -244,7 +244,9 @@ const ReservoirDashboard = () => {
   if (isDataLoading) {
     return (
       <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-        <Spin size="large" tip="資料載入中..." />
+        <Spin size="large" tip="資料載入中...">
+          <div style={{ minHeight: "100%" }} />
+        </Spin>
       </div>
     );
   }
@@ -252,7 +254,9 @@ const ReservoirDashboard = () => {
   if (!hasMeasuredContainer) {
     return (
       <div ref={containerRef} style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <Spin size="large" tip="資料載入中..." />
+        <Spin size="large" tip="資料載入中...">
+          <div style={{ minHeight: "100%" }} />
+        </Spin>
       </div>
     );
   }
@@ -319,7 +323,7 @@ const ReservoirDashboard = () => {
         height={mapHeight}
         style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
       >
-        <Geographies geography={GEO_URL} parseNodeName="counties">
+        <Geographies geography={GEO_URL}>
           {({ geographies }) =>
             geographies.map((geo) => (
               <Geography
@@ -409,6 +413,7 @@ const ReservoirDashboard = () => {
               storage={res.volume}
               pct={res.percent}
               isHovered={res.name === hovered}
+              isDragging={isDragging}
               onMouseEnter={() => setHovered(res.name)}
               onMouseLeave={() => setHovered(null)}
             />

@@ -105,7 +105,7 @@ export default function TaiwanMap({ warnings = [] }) {
         height={700}
         style={{ width: "100%", height: "100%" }}
       >
-        <Geographies geography={GEO_URL} parseNodeName="counties">
+        <Geographies geography={GEO_URL}>
           {({ geographies }) =>
             geographies.map((geo) => {
               const highlightInfo = highlightedAreas[geo.properties.COUNTYNAME];
