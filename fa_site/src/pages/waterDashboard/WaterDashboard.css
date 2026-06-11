@@ -108,6 +108,25 @@
 }
 
 /* 覆寫卡片原本的 absolute 定位，使其支援 Grid 排版 */
+.mobile-grid-view .reservoir-card-wrapper {
+  position: static !important;
+  width: 260px !important;
+  height: auto !important;
+  transform: none !important;
+  margin: 0 auto;
+}
+
+.mobile-grid-view .reservoir-card-wrapper .reservoir-title {
+  position: static !important;
+  top: unset !important;
+  left: unset !important;
+  transform: none !important;
+  width: 100%;
+  margin: 0 0 10px;
+  color: #ffffff !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7) !important;
+}
+
 .mobile-grid-view .reservoir-card {
   position: relative !important;
   transform: none !important;
@@ -116,6 +135,7 @@
   top: unset !important;
   animation: none !important;
   margin: 0;
+  min-height: 220px;
 }
 
 .water-dashboard-page {

@@ -35,12 +35,13 @@ const ReservoirCard = ({ name, storage, pct, isHovered = false, isDragging = fal
   const formattedStorage = formatStorage(storage);
   const storageFillRatio = getStorageFillRatio(storage);
   const fillRatio = hasPct ? safePct / 100 : storageFillRatio != null ? storageFillRatio : 0;
-  const waterLevelY = -22 + (1 - fillRatio) * 82;
+  const waterLevelY = -21 + (1 - fillRatio) * 81;
+  const pctLevelClass = safePct < 20 ? "danger" : safePct < 60 ? "warning" : "";
 
   return (
     <div className="reservoir-card-wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} aria-label={`${name} 水庫資訊圖示`}>
       <div className="reservoir-title">{name}</div>
-      <div className={`reservoir-card ${isHovered ? "hovered" : ""} ${isDragging ? "dragging" : ""}`}>
+      <div className={`reservoir-card ${pctLevelClass} ${isHovered ? "hovered" : ""} ${isDragging ? "dragging" : ""}`}>
 
 
         <div className="reservoir-gauge">
@@ -121,7 +122,7 @@ const ReservoirCard = ({ name, storage, pct, isHovered = false, isDragging = fal
             <div className="storage-amount">{formattedStorage}</div>
             <div className="pct-divider" aria-hidden="true" />
             <div className="storage-unit">萬立方公尺</div>
-            <div className="pct-badge">{safePct.toFixed(2)}%</div>
+            <div className={`pct-badge ${pctLevelClass}`}>{safePct.toFixed(2)}%</div>
           </div>
         </div>
       </div>

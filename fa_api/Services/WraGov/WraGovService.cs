@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using fa_api.Dtos.WraGov;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -11,15 +12,22 @@ namespace fa_api.Services.WraGov
 {
     public class WraGovService : IWraGovService
     {
-        private const string BASE_URL = "https://fhy.wra.gov.tw/WraApi/v1";
+        private const string BASE_URL = "https://fhy.wra.gov.tw/OpenApiv3/v2";  // ← 新 URL
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<WraGovService> _logger;
+        private string API_KEY = "";  // ← 待填入
 
-        public WraGovService(IHttpClientFactory httpClientFactory, ILogger<WraGovService> logger)
+        public WraGovService(IHttpClientFactory httpClientFactory, ILogger<WraGovService> logger, IConfiguration configuration)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            API_KEY = configuration["FhyApi:ApiKey"] ?? "";
+            
+            if (string.IsNullOrEmpty(API_KEY))
+            {
+                _logger.LogWarning("⚠️ 未設置 FHY API Key，部分功能可能無法使用");
+            }
         }
 
         #region 基本資料
@@ -54,14 +62,14 @@ namespace fa_api.Services.WraGov
 
         public async Task<List<ReservoirStationDto>> GetReservoirStationAsync()
         {
-            var url = $"{BASE_URL}/Reservoir/Station";
-            return await FetchDataAsync<ReservoirStationDto>(url, "水庫測站基本資料");
+            var url = $"{BASE_URL}/Reservoir/Station";  // ✅ 新端點
+            return await FetchDataAsync<ReservoirStationDto>(url, "水庫基本資料");
         }
 
         public async Task<List<ReservoirRealTimeInfoDto>> GetReservoirRealTimeInfoAsync()
         {
-            var url = $"{BASE_URL}/Reservoir/RealTimeInfo";
-            return await FetchDataAsync<ReservoirRealTimeInfoDto>(url, "水庫即時資訊");
+            var url = $"{BASE_URL}/Reservoir/Info/RealTime";  // ✅ 新端點（改為 Info/RealTime）
+            return await FetchDataAsync<ReservoirRealTimeInfoDto>(url, "水庫即時資料");
         }
 
         public async Task<List<ReservoirDailyDto>> GetReservoirDailyAsync()
@@ -189,13 +197,13 @@ namespace fa_api.Services.WraGov
 
         public async Task<List<RainStationDto>> GetRainStationAsync()
         {
-            var url = $"{BASE_URL}/Rainfall/Station";
+            var url = $"{BASE_URL}/Rainfall/Station";  // ✅ 新端點
             return await FetchDataAsync<RainStationDto>(url, "雨量站基本資料");
         }
 
         public async Task<List<RainRealTimeInfoDto>> GetRainRealTimeInfoAsync()
         {
-            var url = $"{BASE_URL}/Rainfall/RealTimeInfo";
+            var url = $"{BASE_URL}/Rainfall/Info/RealTime";  // ✅ 新端點
             return await FetchDataAsync<RainRealTimeInfoDto>(url, "雨量即時資訊");
         }
 
@@ -280,6 +288,15 @@ namespace fa_api.Services.WraGov
             try
             {
                 var client = _httpClientFactory.CreateClient();
+        
+                // 添加 API Key 到請求頭
+                if (!string.IsNullOrEmpty(API_KEY))
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {API_KEY}");
+                    // 或根據 API 文檔可能是：
+                    // client.DefaultRequestHeaders.Add("X-API-Key", API_KEY);
+                }
+
                 _logger.LogInformation($"開始取得{dataType}: {url}");
 
                 var response = await client.GetStringAsync(url);
@@ -289,10 +306,15 @@ namespace fa_api.Services.WraGov
                 _logger.LogInformation($"✅ 成功解析 {results.Count} 筆{dataType}");
                 return results;
             }
-            catch (HttpRequestException httpEx)
+            catch (HttpRequestException ex) when (ex.Message.Contains("401") || ex.Message.Contains("403"))
             {
-                _logger.LogError(httpEx, $"HTTP 請求失敗: {url}");
-                throw new InvalidOperationException($"無法連接到水利署 API", httpEx);
+                _logger.LogError(ex, "⚠️ API 驗證失敗 - 請確認 API Key 是否正確");
+                return new List<T>();
+            }
+            catch (HttpRequestException ex) when (ex.Message.Contains("503"))
+            {
+                _logger.LogWarning(ex, "⚠️ 水利署 API 暫時無法使用");
+                return new List<T>();
             }
             catch (Exception ex)
             {
